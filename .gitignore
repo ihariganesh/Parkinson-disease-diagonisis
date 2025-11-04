@@ -75,6 +75,13 @@ models/speech/*.joblib
 ml_models/dat_preprocessed/*.npy
 ml_models/dat_preprocessed_ntua/*.npy
 
+# Large model files in backend
+backend/models/*.h5
+backend/models/resnet50_*.h5
+models/*.h5
+models/vgg16_*.h5
+models/swin_*.h5
+
 # Training outputs
 training_*.log
 *.png
