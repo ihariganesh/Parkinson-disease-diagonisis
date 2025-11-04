@@ -1,0 +1,26 @@
+{
+  "input_shape": [
+    16,
+    128,
+    128,
+    1
+  ],
+  "num_classes": 2,
+  "class_names": [
+    "Healthy",
+    "Parkinson"
+  ],
+  "total_subjects": 66,
+  "train_subjects": 46,
+  "val_subjects": 10,
+  "test_subjects": 10,
+  "target_size": [
+    128,
+    128
+  ],
+  "slices_per_volume": 16,
+  "ntua_pd_subjects": 46,
+  "ntua_npd_subjects": 20,
+  "existing_pd_subjects": 0,
+  "existing_healthy_subjects": 0
+}

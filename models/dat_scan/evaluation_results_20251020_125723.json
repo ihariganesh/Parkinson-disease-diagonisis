@@ -1,0 +1,62 @@
+{
+  "timestamp": "20251020_125723",
+  "test_samples": 4,
+  "classification_report": {
+    "Healthy": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "Parkinson": {
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1-score": 0.6666666666666666,
+      "support": 2.0
+    },
+    "accuracy": 0.5,
+    "macro avg": {
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1-score": 0.3333333333333333,
+      "support": 4.0
+    },
+    "weighted avg": {
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1-score": 0.3333333333333333,
+      "support": 4.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      0,
+      2
+    ],
+    [
+      0,
+      2
+    ]
+  ],
+  "roc_auc": 0.75,
+  "predictions": {
+    "y_true": [
+      0,
+      1,
+      0,
+      1
+    ],
+    "y_pred": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "y_prob": [
+      0.5494599342346191,
+      0.543560266494751,
+      0.5434311628341675,
+      0.5500638484954834
+    ]
+  }
+}

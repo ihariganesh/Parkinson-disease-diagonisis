@@ -1,0 +1,1 @@
+export { default as SpeechAnalysis } from './SpeechAnalysis';

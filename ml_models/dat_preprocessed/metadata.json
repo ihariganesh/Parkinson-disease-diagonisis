@@ -1,0 +1,13 @@
+{
+  "target_size": [
+    128,
+    128
+  ],
+  "max_slices": 16,
+  "num_classes": 2,
+  "class_names": [
+    "Healthy",
+    "Parkinson"
+  ],
+  "seed": 42
+}

@@ -1,0 +1,24 @@
+# Core dependencies for FastAPI backend
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.0
+
+# Database (SQLite)
+sqlalchemy==2.0.23
+
+# HTTP requests
+httpx==0.25.2
+requests==2.31.0
+
+# File handling
+aiofiles==23.2.1
+
+# Basic data processing (compatible with Python 3.13)
+numpy
+pillow
+
+# Minimal scipy for basic functionality
+scipy

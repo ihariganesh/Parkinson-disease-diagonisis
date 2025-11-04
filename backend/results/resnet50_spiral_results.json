@@ -1,0 +1,47 @@
+{
+  "model_type": "resnet50",
+  "pattern_type": "spiral",
+  "accuracy": 0.5,
+  "precision": 0.5,
+  "recall": 1.0,
+  "f1_score": 0.6666666666666666,
+  "roc_auc": 0.7111111111111111,
+  "confusion_matrix": [
+    [
+      0,
+      15
+    ],
+    [
+      0,
+      15
+    ]
+  ],
+  "classification_report": {
+    "Healthy": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 15.0
+    },
+    "Parkinson": {
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1-score": 0.6666666666666666,
+      "support": 15.0
+    },
+    "accuracy": 0.5,
+    "macro avg": {
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1-score": 0.3333333333333333,
+      "support": 30.0
+    },
+    "weighted avg": {
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1-score": 0.3333333333333333,
+      "support": 30.0
+    }
+  },
+  "timestamp": "2025-09-28T07:18:14.766823"
+}

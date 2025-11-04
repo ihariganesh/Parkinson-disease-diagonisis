@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Demo API</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .error { background-color: #ffebee; }
+        .success { background-color: #e8f5e8; }
+    </style>
+</head>
+<body>
+    <h1>Demo API Test</h1>
+    
+    <div>
+        <h3>Test 1: Check if demo endpoint exists</h3>
+        <button onclick="testDemoEndpoint()">Test Demo Endpoint</button>
+        <div id="demo-result" class="result"></div>
+    </div>
+
+    <div>
+        <h3>Test 2: Test with actual audio file</h3>
+        <input type="file" id="audioFile" accept="audio/*">
+        <button onclick="testAudioUpload()">Upload Audio</button>
+        <div id="upload-result" class="result"></div>
+    </div>
+
+    <script>
+        async function testDemoEndpoint() {
+            const resultDiv = document.getElementById('demo-result');
+            try {
+                const response = await fetch('/api/v1/analysis/speech/demo-analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({test: 'data'})
+                });
+                
+                const text = await response.text();
+                resultDiv.innerHTML = `<strong>Status:</strong> ${response.status}<br><strong>Response:</strong> ${text}`;
+                resultDiv.className = response.ok ? 'result success' : 'result error';
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testAudioUpload() {
+            const resultDiv = document.getElementById('upload-result');
+            const fileInput = document.getElementById('audioFile');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<strong>Error:</strong> Please select an audio file first';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                const response = await fetch('/api/v1/analysis/speech/demo-analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const text = await response.text();
+                resultDiv.innerHTML = `<strong>Status:</strong> ${response.status}<br><strong>Response:</strong> ${text}`;
+                resultDiv.className = response.ok ? 'result success' : 'result error';
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>
