@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   CloudArrowUpIcon, 
   BeakerIcon, 
@@ -6,7 +7,8 @@ import {
   MicrophoneIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
 
@@ -39,9 +41,14 @@ interface AnalysisResult {
   fusion_results: FusionResults;
   clinical_interpretation: string;
   recommendations: string[];
+  report_id?: string;
+  saved_to_database?: boolean;
+  save_error?: string;
 }
 
 export default function ComprehensiveAnalysis() {
+  const navigate = useNavigate();
+  
   // File states
   const [datScans, setDatScans] = useState<File[]>([]);
   const [spiralImage, setSpiralImage] = useState<File | null>(null);
@@ -487,6 +494,45 @@ export default function ComprehensiveAnalysis() {
                 ))}
               </ul>
             </div>
+
+            {/* View Report Button */}
+            {result.saved_to_database && result.report_id && (
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-8 text-center">
+                <DocumentTextIcon className="h-16 w-16 text-white mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-3">
+                  Analysis Complete & Saved!
+                </h3>
+                <p className="text-indigo-100 mb-6">
+                  Your comprehensive diagnosis report has been saved to your medical records.
+                  View detailed analysis and track your progress in the Reports section.
+                </p>
+                <button
+                  onClick={() => navigate('/reports')}
+                  className="bg-white text-indigo-600 hover:bg-gray-100 font-bold py-3 px-8 rounded-lg transition duration-200 ease-in-out inline-flex items-center text-lg shadow-lg"
+                >
+                  <DocumentTextIcon className="h-6 w-6 mr-2" />
+                  View Full Report
+                </button>
+              </div>
+            )}
+
+            {/* Save Notification if not saved */}
+            {result.saved_to_database === false && (
+              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6">
+                <div className="flex items-start">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-yellow-900 mb-2">
+                      Report Not Saved
+                    </h3>
+                    <p className="text-sm text-yellow-800">
+                      The analysis completed successfully, but the report could not be saved to your records.
+                      {result.save_error && ` Error: ${result.save_error}`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Important Disclaimer */}
             <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-6">

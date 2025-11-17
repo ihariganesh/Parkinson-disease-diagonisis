@@ -737,6 +737,81 @@ async def analyze_comprehensive(
                 patient_id=patient_id
             )
             
+            # Save diagnosis report to database
+            try:
+                import uuid
+                from app.db.models import DiagnosisReport, DiagnosisStage
+                
+                # Map fusion diagnosis to DiagnosisStage enum
+                diagnosis_mapping = {
+                    'healthy': DiagnosisStage.HEALTHY,
+                    'parkinson': DiagnosisStage.EARLY_STAGE,
+                    'early_stage': DiagnosisStage.EARLY_STAGE,
+                    'moderate_stage': DiagnosisStage.MODERATE_STAGE,
+                    'advanced_stage': DiagnosisStage.ADVANCED_STAGE
+                }
+                
+                fusion_results = result.get('fusion_results', {})
+                final_diagnosis = fusion_results.get('final_diagnosis', 'healthy').lower()
+                confidence = fusion_results.get('final_probability', 0.0)
+                
+                # Determine stage (0-4 scale)
+                stage = 0
+                if final_diagnosis == 'healthy':
+                    stage = 0
+                    diagnosis_stage = DiagnosisStage.HEALTHY
+                elif final_diagnosis in ['parkinson', 'early_stage']:
+                    stage = 1
+                    diagnosis_stage = DiagnosisStage.EARLY_STAGE
+                elif final_diagnosis == 'moderate_stage':
+                    stage = 2
+                    diagnosis_stage = DiagnosisStage.MODERATE_STAGE
+                elif final_diagnosis == 'advanced_stage':
+                    stage = 3
+                    diagnosis_stage = DiagnosisStage.ADVANCED_STAGE
+                else:
+                    stage = 0
+                    diagnosis_stage = DiagnosisStage.HEALTHY
+                
+                # Prepare multimodal analysis data
+                multimodal_analysis = {
+                    'dat_scan': result.get('modality_results', {}).get('dat'),
+                    'handwriting': result.get('modality_results', {}).get('handwriting'),
+                    'voice': result.get('modality_results', {}).get('voice'),
+                    'fusion_results': fusion_results,
+                    'clinical_interpretation': result.get('clinical_interpretation'),
+                    'recommendations': result.get('recommendations')
+                }
+                
+                # Create diagnosis report
+                diagnosis_report = DiagnosisReport(
+                    id=str(uuid.uuid4()),
+                    patient_id=current_user.id,  # Use authenticated user ID
+                    doctor_id=None,  # No doctor assigned yet
+                    final_diagnosis=diagnosis_stage,
+                    confidence=confidence,
+                    stage=stage,
+                    multimodal_analysis=multimodal_analysis,
+                    fusion_score=fusion_results.get('agreement_score', 0.0),
+                    doctor_notes=None,
+                    doctor_verified=False
+                )
+                
+                db.add(diagnosis_report)
+                db.commit()
+                db.refresh(diagnosis_report)
+                
+                # Add report ID to result
+                result['report_id'] = diagnosis_report.id
+                result['saved_to_database'] = True
+                
+                logging.info(f"✓ Saved diagnosis report {diagnosis_report.id} for user {current_user.id}")
+                
+            except Exception as save_error:
+                logging.error(f"Failed to save diagnosis report: {str(save_error)}")
+                result['saved_to_database'] = False
+                result['save_error'] = str(save_error)
+            
             return result
             
     except Exception as e:

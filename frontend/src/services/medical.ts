@@ -79,6 +79,16 @@ export class MedicalService {
     return response;
   }
 
+  async deleteDiagnosisReport(id: string) {
+    const response = await apiClient.delete(`/medical/reports/${id}`);
+    return response;
+  }
+
+  async bulkDeleteDiagnosisReports(reportIds: string[]) {
+    const response = await apiClient.post('/medical/reports/bulk-delete', reportIds);
+    return response;
+  }
+
   async verifyDiagnosisReport(id: string, doctorNotes?: string) {
     const response = await apiClient.post<DiagnosisReport>(`/medical/reports/${id}/verify`, {
       doctorNotes,

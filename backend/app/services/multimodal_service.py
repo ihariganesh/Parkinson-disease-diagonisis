@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 from datetime import datetime
 
-from app.services.dat_service_direct import DaTService
+from app.services.dat_service_direct import DaTScanAnalysisServiceDirect
 from app.services.handwriting_service import HandwritingService
 from app.services.speech_service import SpeechService
 
@@ -23,7 +23,7 @@ class MultiModalAnalysisService:
     
     def __init__(self):
         """Initialize all modality services"""
-        self.dat_service = DaTService()
+        self.dat_service = DaTScanAnalysisServiceDirect()
         self.handwriting_service = HandwritingService()
         self.speech_service = SpeechService()
         

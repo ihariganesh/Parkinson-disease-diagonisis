@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Reports API Response</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Reports API Test</h1>
+    
+    <button onclick="testAPI()">Test /medical/reports Endpoint</button>
+    <button onclick="checkLocalStorage()">Check localStorage</button>
+    
+    <h2>Output:</h2>
+    <pre id="output">Click "Test /medical/reports Endpoint" button...</pre>
+    
+    <script>
+        function checkLocalStorage() {
+            const output = document.getElementById('output');
+            const token = localStorage.getItem('auth_token');
+            const user = localStorage.getItem('user');
+            
+            output.innerHTML = 'LocalStorage Check:\n\n';
+            output.innerHTML += 'auth_token: ' + (token ? 'EXISTS (length: ' + token.length + ')' : 'NOT FOUND') + '\n';
+            output.innerHTML += 'user: ' + (user ? JSON.stringify(JSON.parse(user), null, 2) : 'NOT FOUND') + '\n';
+        }
+        
+        async function testAPI() {
+            const output = document.getElementById('output');
+            const token = localStorage.getItem('auth_token');
+            
+            output.innerHTML = 'Testing API...\n\n';
+            
+            if (!token) {
+                output.innerHTML += '<span class="error">ERROR: No auth_token in localStorage!</span>\n';
+                output.innerHTML += 'Please open http://localhost:5174 first and log in.\n';
+                return;
+            }
+            
+            output.innerHTML += 'Token found: ' + token.substring(0, 50) + '...\n\n';
+            
+            try {
+                // Test 1: Call the endpoint
+                output.innerHTML += '=== Test 1: GET /api/v1/medical/reports ===\n';
+                const response = await fetch('http://localhost:8000/api/v1/medical/reports?page=1&limit=50', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                output.innerHTML += 'Status: ' + response.status + ' ' + response.statusText + '\n';
+                output.innerHTML += 'Headers: ' + JSON.stringify([...response.headers.entries()], null, 2) + '\n\n';
+                
+                const data = await response.json();
+                output.innerHTML += 'Response Body:\n';
+                output.innerHTML += JSON.stringify(data, null, 2) + '\n\n';
+                
+                // Test 2: Check response structure
+                output.innerHTML += '\n=== Test 2: Response Structure Check ===\n';
+                if (data.items) {
+                    output.innerHTML += '<span class="success">✓ Has "items" property</span>\n';
+                    output.innerHTML += 'Total items: ' + data.items.length + '\n';
+                    output.innerHTML += 'Total count: ' + data.total + '\n';
+                    
+                    if (data.items.length > 0) {
+                        output.innerHTML += '\nFirst item structure:\n';
+                        output.innerHTML += JSON.stringify(data.items[0], null, 2) + '\n';
+                    }
+                } else if (data.data) {
+                    output.innerHTML += '<span class="error">✗ Has "data" instead of "items"</span>\n';
+                    output.innerHTML += 'This is the problem! Frontend expects "items" but backend returns "data"\n';
+                } else {
+                    output.innerHTML += '<span class="error">✗ Unknown response structure</span>\n';
+                }
+                
+            } catch (err) {
+                output.innerHTML += '<span class="error">ERROR: ' + err.message + '</span>\n';
+                output.innerHTML += err.stack;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -13,6 +13,7 @@ import tensorflow as tf
 from tensorflow import keras
 from pathlib import Path
 import json
+import argparse
 import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.metrics import (
@@ -22,6 +23,28 @@ from sklearn.metrics import (
 import seaborn as sns
 
 from dat_cnn_lstm_model import DaTCNNLSTMModel, DaTModelBuilder
+
+
+def configure_gpu(use_gpu: bool):
+    """Configure GPU settings - call before any TF operations"""
+    if use_gpu:
+        gpus = tf.config.list_physical_devices('GPU')
+        if gpus:
+            try:
+                # Enable memory growth to avoid OOM errors
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+                print(f"✅ GPU enabled: {len(gpus)} GPU(s) found")
+                print(f"   GPU: {gpus[0].name}")
+            except RuntimeError as e:
+                print(f"⚠️  GPU configuration error: {e}")
+                print(f"   Continuing with default GPU settings...")
+        else:
+            print("⚠️  No GPU found, using CPU")
+    else:
+        # Disable GPU
+        tf.config.set_visible_devices([], 'GPU')
+        print("Using CPU for training")
 
 
 class DaTModelTrainer:
@@ -34,8 +57,7 @@ class DaTModelTrainer:
         self,
         model: DaTCNNLSTMModel,
         data_dir: str,
-        output_dir: str,
-        use_gpu: bool = True
+        output_dir: str
     ):
         """
         Initialize trainer
@@ -44,15 +66,13 @@ class DaTModelTrainer:
             model: DaTCNNLSTMModel instance
             data_dir: Directory containing preprocessed data
             output_dir: Directory to save models and results
-            use_gpu: Whether to use GPU for training
         """
         self.model = model
         self.data_dir = Path(data_dir)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Configure GPU
-        self.configure_gpu(use_gpu)
+        self.history = None
         
         # Load data
         self.load_data()
@@ -409,18 +429,42 @@ class DaTModelTrainer:
 
 def main():
     """Main training script"""
-    # Configuration
-    DATA_DIR = "/home/hari/Downloads/parkinson/parkinson-app/ml_models/dat_preprocessed"
-    OUTPUT_DIR = "/home/hari/Downloads/parkinson/parkinson-app/models/dat_scan"
+    parser = argparse.ArgumentParser(description='Train DaT scan CNN-LSTM model')
+    parser.add_argument('--data_dir', type=str,
+                       default='/home/hari/Downloads/parkinson/parkinson-app/ml_models/dat_preprocessed_ntua',
+                       help='Directory containing preprocessed data')
+    parser.add_argument('--output_dir', type=str,
+                       default='/home/hari/Downloads/parkinson/parkinson-app/models/dat_scan',
+                       help='Directory to save trained model and results')
+    parser.add_argument('--epochs', type=int, default=100,
+                       help='Number of training epochs')
+    parser.add_argument('--batch_size', type=int, default=8,
+                       help='Batch size for training')
+    parser.add_argument('--patience', type=int, default=15,
+                       help='Early stopping patience')
     
-    # Training hyperparameters
-    EPOCHS = 25
-    BATCH_SIZE = 4  # Reduced from 8 to avoid GPU memory exhaustion on RTX 3050 6GB
-    PATIENCE = 10
+    args = parser.parse_args()
+    
+    # Configuration
+    DATA_DIR = args.data_dir
+    OUTPUT_DIR = args.output_dir
+    EPOCHS = args.epochs
+    BATCH_SIZE = args.batch_size
+    PATIENCE = args.patience
     
     print("="*80)
     print("DaT SCAN MODEL TRAINING")
     print("="*80)
+    print(f"\nConfiguration:")
+    print(f"  Data directory: {DATA_DIR}")
+    print(f"  Output directory: {OUTPUT_DIR}")
+    print(f"  Epochs: {EPOCHS}")
+    print(f"  Batch size: {BATCH_SIZE}")
+    print(f"  Patience: {PATIENCE}")
+    
+    # Configure GPU first (before any TF operations)
+    print("\nConfiguring GPU...")
+    configure_gpu(use_gpu=True)
     
     # Build model
     print("\nBuilding model...")
@@ -434,8 +478,7 @@ def main():
     trainer = DaTModelTrainer(
         model=model,
         data_dir=DATA_DIR,
-        output_dir=OUTPUT_DIR,
-        use_gpu=True
+        output_dir=OUTPUT_DIR
     )
     
     # Train model

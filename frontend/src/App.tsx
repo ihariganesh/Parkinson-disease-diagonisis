@@ -17,11 +17,12 @@ import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import HandwritingPage from "./pages/HandwritingPage";
 import AnalysisHub from "./pages/AnalysisHub";
-import MultimodalUpload from "./pages/MultimodalUpload";
 import SpeechAnalysisPage from "./pages/SpeechAnalysisPage";
 import DaTAnalysis from "./pages/DaTAnalysis";
 import ComprehensiveAnalysis from "./pages/ComprehensiveAnalysis";
-// MRIAnalysis component removed during cleanup
+import ProfilePage from "./pages/ProfilePage";
+import ReportsPage from "./pages/ReportsPage";
+// Individual analysis pages kept only for demo routes
 
 // Component to redirect to appropriate dashboard based on user role
 function DashboardRedirect() {
@@ -100,38 +101,28 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        
+        {/* Profile Page */}
         <Route
-          path="/multimodal-upload"
+          path="/profile"
           element={
-            <ProtectedRoute allowedRoles={["patient"]}>
-              <MultimodalUpload />
+            <ProtectedRoute allowedRoles={["patient", "doctor"]}>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />
+        
+        {/* Reports Page */}
         <Route
-          path="/handwriting"
+          path="/reports"
           element={
-            <ProtectedRoute allowedRoles={["patient"]}>
-              <HandwritingPage />
+            <ProtectedRoute allowedRoles={["patient", "doctor"]}>
+              <ReportsPage />
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/speech"
-          element={
-            <ProtectedRoute allowedRoles={["patient"]}>
-              <SpeechAnalysisPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dat"
-          element={
-            <ProtectedRoute allowedRoles={["patient"]}>
-              <DaTAnalysis />
-            </ProtectedRoute>
-          }
-        />
+        
+        {/* Comprehensive Analysis - Main multimodal analysis page */}
         <Route
           path="/comprehensive"
           element={
@@ -140,7 +131,17 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        {/* MRI route removed during cleanup */}
+        {/* Multimodal Upload - kept for backward compatibility, redirects to comprehensive */}
+        <Route
+          path="/multimodal-upload"
+          element={<Navigate to="/comprehensive" replace />}
+        />
+        
+        {/* Individual analysis routes removed - use /comprehensive instead */}
+        {/* Redirects for backward compatibility */}
+        <Route path="/handwriting" element={<Navigate to="/comprehensive" replace />} />
+        <Route path="/speech" element={<Navigate to="/comprehensive" replace />} />
+        <Route path="/dat" element={<Navigate to="/comprehensive" replace />} />
 
         {/* Protected Doctor routes */}
         <Route

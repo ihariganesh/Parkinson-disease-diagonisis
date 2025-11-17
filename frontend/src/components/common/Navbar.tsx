@@ -2,16 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   HomeIcon,
-  DocumentTextIcon,
   ChartBarIcon,
-  Cog6ToothIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
-  MicrophoneIcon,
-  PencilIcon,
-  BeakerIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
@@ -19,18 +14,14 @@ import { useAuth } from "../../contexts/AuthContext";
 const navigation = {
   patient: [
     { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
-    { name: "Upload Data", href: "/patient/upload", icon: DocumentTextIcon },
-    { name: "Comprehensive", href: "/comprehensive", icon: SparklesIcon },
-    { name: "Handwriting", href: "/handwriting", icon: PencilIcon },
-    { name: "Speech", href: "/speech", icon: MicrophoneIcon },
-    { name: "DaT Scan", href: "/dat", icon: BeakerIcon },
-    { name: "Reports", href: "/patient/reports", icon: ChartBarIcon },
-    { name: "Lifestyle", href: "/patient/lifestyle", icon: Cog6ToothIcon },
+    { name: "Analysis", href: "/comprehensive", icon: SparklesIcon },
+    { name: "Reports", href: "/reports", icon: ChartBarIcon },
+    { name: "Profile", href: "/profile", icon: UserCircleIcon },
   ],
   doctor: [
     { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
     { name: "Patients", href: "/doctor/patients", icon: UserCircleIcon },
-    { name: "Reports", href: "/doctor/reports", icon: ChartBarIcon },
+    { name: "Reports", href: "/reports", icon: ChartBarIcon },
     { name: "Analytics", href: "/doctor/analytics", icon: ChartBarIcon },
   ],
 };

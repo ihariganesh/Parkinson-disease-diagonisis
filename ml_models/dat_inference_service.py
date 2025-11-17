@@ -24,7 +24,7 @@ class DaTScanInferenceService:
         model_path: str,
         target_size: Tuple[int, int] = (128, 128),
         max_slices: int = 16,
-        threshold: float = 0.5
+        threshold: float = 0.65  # Raised from 0.5 to reduce false positives
     ):
         """
         Initialize inference service
@@ -33,7 +33,15 @@ class DaTScanInferenceService:
             model_path: Path to trained model (.keras file)
             target_size: Image preprocessing size
             max_slices: Maximum number of slices expected
-            threshold: Classification threshold
+            threshold: Classification threshold (raised to 0.65 due to model bias)
+        
+        Note:
+            The threshold is set to 0.65 (instead of 0.5) because the current model
+            is biased toward predicting Parkinson's Disease. This was trained on a
+            small, imbalanced dataset (24 Healthy, 56 PD) and has 0% recall for
+            Healthy class. Raising the threshold reduces false positives.
+            
+            TODO: Retrain model with more balanced data and proper augmentation.
         """
         self.model_path = Path(model_path)
         self.target_size = target_size

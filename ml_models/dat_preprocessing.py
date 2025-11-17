@@ -9,6 +9,7 @@ import cv2
 from pathlib import Path
 from typing import Tuple, List, Dict
 import json
+import argparse
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
@@ -39,8 +40,15 @@ class DaTDatasetPreprocessor:
         self.max_slices = max_slices
         self.seed = seed
         
-        self.healthy_dir = self.data_dir / "Healthy"
-        self.pd_dir = self.data_dir / "PD"
+        # Check for different directory naming conventions
+        if (self.data_dir / "Non PD Patients").exists():
+            # NTUA dataset structure
+            self.healthy_dir = self.data_dir / "Non PD Patients"
+            self.pd_dir = self.data_dir / "PD Patients"
+        else:
+            # Default structure
+            self.healthy_dir = self.data_dir / "Healthy"
+            self.pd_dir = self.data_dir / "PD"
         
         # Verify directories exist
         if not self.data_dir.exists():
@@ -89,8 +97,22 @@ class DaTDatasetPreprocessor:
             Tuple of (scan_sequence, label)
             scan_sequence shape: (max_slices, H, W, 1)
         """
-        # Get all PNG files sorted by name
-        slice_files = sorted(subject_dir.glob("*.png"))
+        # Try to find PNG files in nested structure (NTUA dataset)
+        # Structure: Subject*/0.DAT/s1/*.png or Subject*/0.DAT/s2/*.png
+        dat_dir = subject_dir / "0.DAT"
+        slice_files = []
+        
+        if dat_dir.exists():
+            # Look in s1 and s2 subfolders
+            for subfolder in ["s1", "s2"]:
+                subfolder_path = dat_dir / subfolder
+                if subfolder_path.exists():
+                    slice_files.extend(sorted(subfolder_path.glob("*.png")))
+                    break  # Use first available subfolder
+        
+        # Fallback: Look for PNG files directly in subject directory
+        if len(slice_files) == 0:
+            slice_files = sorted(subject_dir.glob("*.png"))
         
         if len(slice_files) == 0:
             raise ValueError(f"No PNG files found in {subject_dir}")
@@ -264,15 +286,31 @@ class DaTDatasetPreprocessor:
 
 def main():
     """Main preprocessing script"""
-    # Configuration
-    DATA_DIR = "/home/hari/Downloads/parkinson/DAT"
-    OUTPUT_DIR = "/home/hari/Downloads/parkinson/parkinson-app/ml_models/dat_preprocessed"
+    parser = argparse.ArgumentParser(description='Preprocess DaT scan dataset for training')
+    parser.add_argument('--input_dir', type=str, 
+                       default='/home/hari/Downloads/parkinson/ntua-parkinson-dataset',
+                       help='Input directory containing PD Patients and Non PD Patients folders')
+    parser.add_argument('--output_dir', type=str,
+                       default='/home/hari/Downloads/parkinson/parkinson-app/ml_models/dat_preprocessed_ntua',
+                       help='Output directory for preprocessed data')
+    parser.add_argument('--target_size', type=int, nargs=2, default=[128, 128],
+                       help='Target size for images (height width)')
+    parser.add_argument('--max_slices', type=int, default=16,
+                       help='Maximum number of slices per scan')
     
-    TARGET_SIZE = (128, 128)
-    MAX_SLICES = 16
+    args = parser.parse_args()
+    
+    # Configuration
+    DATA_DIR = args.input_dir
+    OUTPUT_DIR = args.output_dir
+    TARGET_SIZE = tuple(args.target_size)
+    MAX_SLICES = args.max_slices
+    
+    print(f"Input directory: {DATA_DIR}")
+    print(f"Output directory: {OUTPUT_DIR}")
     
     # Initialize preprocessor
-    print("Initializing DaT dataset preprocessor...")
+    print("\nInitializing DaT dataset preprocessor...")
     preprocessor = DaTDatasetPreprocessor(
         data_dir=DATA_DIR,
         target_size=TARGET_SIZE,

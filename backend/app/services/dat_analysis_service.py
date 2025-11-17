@@ -112,6 +112,21 @@ class DaTScanAnalysisService:
                 'timestamp': result['timestamp']
             }
             
+            # Add reliability warning for low confidence
+            # Model has known bias (trained on small, imbalanced dataset)
+            if result['confidence'] < 0.75:
+                response['warning'] = (
+                    "⚠️ Model confidence is below 75%. The current DaT scan model "
+                    "was trained on a limited dataset and shows bias toward Parkinson's predictions. "
+                    "Please verify results with clinical examination and additional diagnostic tests."
+                )
+                response['reliability'] = 'Low'
+            elif result['confidence'] < 0.85:
+                response['reliability'] = 'Moderate'
+                response['note'] = "Moderate confidence. Consider additional diagnostic confirmation."
+            else:
+                response['reliability'] = 'High'
+            
             if patient_id:
                 response['patient_id'] = patient_id
             
@@ -167,6 +182,21 @@ class DaTScanAnalysisService:
                 'interpretation': result['interpretation'],
                 'timestamp': result['timestamp']
             }
+            
+            # Add reliability warning for low confidence
+            # Model has known bias (trained on small, imbalanced dataset)
+            if result['confidence'] < 0.75:
+                response['warning'] = (
+                    "⚠️ Model confidence is below 75%. The current DaT scan model "
+                    "was trained on a limited dataset and shows bias toward Parkinson's predictions. "
+                    "Please verify results with clinical examination and additional diagnostic tests."
+                )
+                response['reliability'] = 'Low'
+            elif result['confidence'] < 0.85:
+                response['reliability'] = 'Moderate'
+                response['note'] = "Moderate confidence. Consider additional diagnostic confirmation."
+            else:
+                response['reliability'] = 'High'
             
             if patient_id:
                 response['patient_id'] = patient_id

@@ -113,149 +113,77 @@ export default function PatientDashboard() {
         />
       )}
 
-      {/* Comprehensive Analysis Section */}
+      {/* Main Comprehensive Analysis Section */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-8 text-white">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 rounded-2xl p-10 text-white shadow-2xl">
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
+            {/* Left Side - CTA */}
             <div>
-              <h2 className="text-2xl font-bold mb-2">
-                Comprehensive AI Analysis
-              </h2>
-              <p className="text-blue-100 mb-4 max-w-2xl">
-                Upload all your medical data at once for integrated multimodal analysis. 
-                Our AI combines handwriting, voice, and medical reports to provide 
-                accurate Parkinson's assessment and staging.
-              </p>
-              <button
-                onClick={() => navigate("/multimodal-upload")}
-                className="bg-white text-blue-600 hover:bg-gray-100 font-medium py-3 px-6 rounded-lg transition duration-200 ease-in-out inline-flex items-center"
-              >
-                <CloudArrowUpIcon className="h-5 w-5 mr-2" />
-                Start Comprehensive Analysis
-              </button>
-            </div>
-            <div className="hidden lg:block">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
-                  <PencilIcon className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm">Handwriting</span>
-                </div>
-                <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
-                  <MicrophoneIcon className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm">Voice</span>
-                </div>
-                <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
-                  <DocumentTextIcon className="h-8 w-8 mx-auto mb-2" />
-                  <span className="text-sm">Reports</span>
-                </div>
-                {/* MRI section removed during cleanup */}
+              <div className="flex items-center mb-4">
+                <SparklesIcon className="h-10 w-10 mr-3" />
+                <h2 className="text-3xl font-bold">
+                  Comprehensive AI Analysis
+                </h2>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Analysis Access */}
-      <div className="mb-8">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Comprehensive & Individual Analysis Tools
-            </h3>
-            <p className="text-gray-600">
-              Access our AI-powered analysis features for complete health assessment.
-            </p>
-          </div>
-          
-          {/* Comprehensive Analysis - Featured */}
-          <div className="mb-6 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-300">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center mb-2">
-                  <SparklesIcon className="h-6 w-6 text-indigo-600 mr-2" />
-                  <h4 className="text-xl font-bold text-gray-900">Comprehensive Multi-Modal Analysis</h4>
-                  <span className="ml-3 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full">
-                    RECOMMENDED
-                  </span>
+              <p className="text-blue-100 mb-6 text-lg leading-relaxed">
+                Upload all your medical data at once for integrated multimodal analysis. 
+                Our AI combines <strong>handwriting, voice, and medical reports</strong> to provide 
+                accurate Parkinson's assessment and staging with AI-powered lifestyle recommendations.
+              </p>
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white bg-opacity-20 rounded-full p-2">
+                    <BeakerIcon className="h-5 w-5" />
+                  </div>
+                  <span className="text-white">DaT Scan Analysis</span>
                 </div>
-                <p className="text-gray-700 mb-2">
-                  Complete Parkinson's assessment combining DaT scan, handwriting, and voice analysis for maximum accuracy
-                </p>
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                  <span className="flex items-center">
-                    <BeakerIcon className="h-4 w-4 mr-1" />
-                    DaT Scan (50%)
-                  </span>
-                  <span className="flex items-center">
-                    <PencilIcon className="h-4 w-4 mr-1" />
-                    Handwriting (25%)
-                  </span>
-                  <span className="flex items-center">
-                    <MicrophoneIcon className="h-4 w-4 mr-1" />
-                    Voice (25%)
-                  </span>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white bg-opacity-20 rounded-full p-2">
+                    <PencilIcon className="h-5 w-5" />
+                  </div>
+                  <span className="text-white">Handwriting Pattern Detection</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white bg-opacity-20 rounded-full p-2">
+                    <MicrophoneIcon className="h-5 w-5" />
+                  </div>
+                  <span className="text-white">Voice Biomarker Analysis</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white bg-opacity-20 rounded-full p-2">
+                    <DocumentTextIcon className="h-5 w-5" />
+                  </div>
+                  <span className="text-white">AI-Powered Report & Recommendations</span>
                 </div>
               </div>
               <button
                 onClick={() => navigate("/comprehensive")}
-                className="ml-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out inline-flex items-center shadow-lg"
+                className="bg-white text-indigo-700 hover:bg-gray-100 font-bold py-4 px-8 rounded-xl transition duration-200 ease-in-out inline-flex items-center shadow-xl text-lg"
               >
-                <SparklesIcon className="h-5 w-5 mr-2" />
+                <CloudArrowUpIcon className="h-6 w-6 mr-3" />
                 Start Comprehensive Analysis
               </button>
             </div>
-          </div>
-          
-          {/* Individual Analysis Tools */}
-          <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Individual Analysis Tools</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Handwriting Analysis */}
-              <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div>
-                  <h5 className="font-medium text-gray-900 mb-1">Handwriting Analysis</h5>
-                  <p className="text-sm text-gray-600">Draw spirals to detect motor symptoms</p>
+            
+            {/* Right Side - Visual Grid */}
+            <div className="hidden lg:block">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+                  <PencilIcon className="h-12 w-12 mx-auto mb-3" />
+                  <span className="text-base font-medium">Handwriting</span>
+                  <p className="text-xs text-blue-100 mt-2">25% Weight</p>
                 </div>
-                <button
-                  onClick={() => navigate("/handwriting")}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 ease-in-out inline-flex items-center"
-                >
-                  <PencilIcon className="h-4 w-4 mr-2" />
-                  Analyze Now
-                </button>
-              </div>
-
-              {/* Speech Analysis */}
-              <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                <div>
-                  <h5 className="font-medium text-gray-900 mb-1">Speech Analysis</h5>
-                  <p className="text-sm text-gray-600">Analyze voice patterns and biomarkers</p>
+                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 text-center transform hover:scale-105 transition-transform">
+                  <MicrophoneIcon className="h-12 w-12 mx-auto mb-3" />
+                  <span className="text-base font-medium">Voice</span>
+                  <p className="text-xs text-blue-100 mt-2">25% Weight</p>
                 </div>
-                <button
-                  onClick={() => navigate("/speech")}
-                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 ease-in-out inline-flex items-center"
-                >
-                  <MicrophoneIcon className="h-4 w-4 mr-2" />
-                  Analyze Now
-                </button>
-              </div>
-
-              {/* DaT Scan Analysis */}
-              <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                <div>
-                  <h5 className="font-medium text-gray-900 mb-1">DaT Scan Analysis</h5>
-                  <p className="text-sm text-gray-600">AI analysis of dopamine transporter scans</p>
+                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 text-center transform hover:scale-105 transition-transform col-span-2">
+                  <DocumentTextIcon className="h-12 w-12 mx-auto mb-3" />
+                  <span className="text-base font-medium">Reports</span>
+                  <p className="text-xs text-blue-100 mt-2">Complete Diagnosis & AI Recommendations</p>
                 </div>
-                <button
-                  onClick={() => navigate("/dat")}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 ease-in-out inline-flex items-center"
-                >
-                  <BeakerIcon className="h-4 w-4 mr-2" />
-                  Analyze Now
-                </button>
               </div>
-
-              {/* MRI Analysis removed during cleanup */}
             </div>
           </div>
         </div>
@@ -275,7 +203,7 @@ export default function PatientDashboard() {
                 <CloudArrowUpIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">No data uploaded yet</p>
                 <button
-                  onClick={() => navigate("/multimodal-upload")}
+                  onClick={() => navigate("/comprehensive")}
                   className="btn-primary mt-4"
                 >
                   Start Comprehensive Analysis

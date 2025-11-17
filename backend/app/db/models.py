@@ -40,6 +40,19 @@ class User(Base):
     date_of_birth = Column(DateTime, nullable=True)
     phone_number = Column(String, nullable=True)
     profile_picture = Column(String, nullable=True)
+    
+    # Address fields
+    address_street = Column(String, nullable=True)
+    address_city = Column(String, nullable=True)
+    address_state = Column(String, nullable=True)
+    address_zip = Column(String, nullable=True)
+    address_country = Column(String, nullable=True)
+    
+    # Emergency contact fields
+    emergency_contact_name = Column(String, nullable=True)
+    emergency_contact_phone = Column(String, nullable=True)
+    emergency_contact_relationship = Column(String, nullable=True)
+    
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -48,6 +61,16 @@ class User(Base):
     medical_data = relationship("MedicalData", back_populates="patient")
     patient_reports = relationship("DiagnosisReport", foreign_keys="DiagnosisReport.patient_id", back_populates="patient")
     doctor_reports = relationship("DiagnosisReport", foreign_keys="DiagnosisReport.doctor_id", back_populates="doctor")
+    
+    @property
+    def age(self) -> int:
+        """Calculate age from date of birth"""
+        if not self.date_of_birth:
+            return None
+        today = datetime.today()
+        return today.year - self.date_of_birth.year - (
+            (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)
+        )
 
 
 class Patient(Base):

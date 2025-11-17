@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Reports API</title>
+</head>
+<body>
+    <h1>Testing Reports API</h1>
+    <button onclick="testAPI()">Test /medical/reports</button>
+    <pre id="output"></pre>
+    
+    <script>
+        async function testAPI() {
+            const token = localStorage.getItem('auth_token');
+            const output = document.getElementById('output');
+            
+            output.textContent = 'Testing...\n';
+            output.textContent += 'Token: ' + (token ? 'Found' : 'NOT FOUND') + '\n\n';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/medical/reports?page=1&limit=50', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                output.textContent += 'Status: ' + response.status + '\n';
+                const data = await response.json();
+                output.textContent += 'Response:\n' + JSON.stringify(data, null, 2);
+            } catch (err) {
+                output.textContent += 'Error: ' + err.message;
+            }
+        }
+    </script>
+</body>
+</html>
