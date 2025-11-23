@@ -1,0 +1,40 @@
+# Core dependencies (working versions for Render)
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.0
+
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.12.1
+
+# Data processing
+pandas==2.1.3
+numpy==1.25.2
+pillow==10.1.0
+scipy==1.11.4
+
+# HTTP client
+httpx==0.25.2
+aiofiles==23.2.1
+
+# Development
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Monitoring
+prometheus-client==0.19.0
+
+# ML Dependencies - Simplified for Render Free Tier
+# Note: TensorFlow and PyTorch are too heavy for 512MB RAM
+# We'll use lighter alternatives or CPU-only versions
+scikit-learn==1.3.2
+
+# Speech analysis - Core only (without heavy dependencies)
+soundfile==0.12.1
+
+# Google Gemini AI
+google-generativeai==0.3.1
