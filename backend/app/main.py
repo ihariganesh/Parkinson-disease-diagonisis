@@ -29,7 +29,7 @@ app = FastAPI(
 # Security middleware
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["localhost", "127.0.0.1", "*.yourdomain.com"]
+    allowed_hosts=["localhost", "127.0.0.1", "*.yourdomain.com", "*.ngrok-free.dev", "*.ngrok.io"]
 )
 
 # CORS middleware

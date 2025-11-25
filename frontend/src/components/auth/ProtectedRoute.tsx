@@ -30,7 +30,7 @@ export default function ProtectedRoute({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(state.user.role)) {
+  if (allowedRoles && !allowedRoles.includes(state.user.role as "patient" | "doctor")) {
     return <Navigate to="/unauthorized" replace />;
   }
 
