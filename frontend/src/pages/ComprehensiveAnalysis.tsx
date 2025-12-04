@@ -374,13 +374,15 @@ export default function ComprehensiveAnalysis() {
                   <p className="text-sm text-gray-600 mb-1">Diagnosis</p>
                   <p className="text-3xl font-bold">{result.fusion_results.final_diagnosis}</p>
                 </div>
-                <div>
+                {/* Hidden: Confidence Level */}
+                {/* <div>
                   <p className="text-sm text-gray-600 mb-1">Confidence Level</p>
                   <span className={`inline-block px-4 py-2 rounded-lg font-semibold text-lg ${getConfidenceColor(result.fusion_results.confidence_level)}`}>
                     {result.fusion_results.confidence_level} ({(result.fusion_results.confidence * 100).toFixed(1)}%)
                   </span>
-                </div>
-                <div>
+                </div> */}
+                {/* Hidden: PD Probability */}
+                {/* <div>
                   <p className="text-sm text-gray-600 mb-1">PD Probability</p>
                   <div className="flex items-center">
                     <div className="flex-1 bg-gray-200 rounded-full h-4 mr-3">
@@ -391,7 +393,7 @@ export default function ComprehensiveAnalysis() {
                     </div>
                     <span className="font-bold">{(result.fusion_results.final_probability * 100).toFixed(1)}%</span>
                   </div>
-                </div>
+                </div> */}
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Modality Agreement</p>
                   <div className="flex items-center">
