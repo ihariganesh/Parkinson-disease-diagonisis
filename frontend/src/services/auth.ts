@@ -49,7 +49,23 @@ export class AuthService {
           password: userData.password,
           first_name: userData.firstName,
           last_name: userData.lastName,
-          role: userData.role || 'PATIENT'
+          role: userData.role || 'PATIENT',
+          date_of_birth: userData.dateOfBirth,
+          phone_number: userData.phoneNumber,
+          // Address fields
+          address_street: userData.addressStreet,
+          address_city: userData.addressCity,
+          address_state: userData.addressState,
+          address_zip: userData.addressZip,
+          address_country: userData.addressCountry,
+          // Emergency contact fields
+          emergency_contact_name: userData.emergencyContactName,
+          emergency_contact_phone: userData.emergencyContactPhone,
+          emergency_contact_relationship: userData.emergencyContactRelationship,
+          // Doctor fields if applicable
+          license_number: userData.licenseNumber,
+          specialization: userData.specialization,
+          hospital: userData.hospital,
         }),
       });
 
