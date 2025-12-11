@@ -68,7 +68,7 @@ const ProfilePage: React.FC = () => {
       }
       
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/patients/profile`,
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/patients/profile`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -135,7 +135,7 @@ const ProfilePage: React.FC = () => {
       console.log('Saving profile data:', formData);
       
       const response = await axios.put(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/patients/profile`,
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/patients/profile`,
         formData,
         {
           headers: { 
