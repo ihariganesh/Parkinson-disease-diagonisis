@@ -14,6 +14,16 @@ export default function RegisterForm() {
     role: "patient" as "patient" | "doctor",
     dateOfBirth: "",
     phoneNumber: "",
+    // Address fields
+    addressStreet: "",
+    addressCity: "",
+    addressState: "",
+    addressZip: "",
+    addressCountry: "",
+    // Emergency contact fields
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    emergencyContactRelationship: "",
     // Doctor specific fields
     licenseNumber: "",
     specialization: "",
@@ -54,6 +64,16 @@ export default function RegisterForm() {
         role: formData.role,
         dateOfBirth: formData.dateOfBirth || undefined,
         phoneNumber: formData.phoneNumber || undefined,
+        // Address fields
+        addressStreet: formData.addressStreet || undefined,
+        addressCity: formData.addressCity || undefined,
+        addressState: formData.addressState || undefined,
+        addressZip: formData.addressZip || undefined,
+        addressCountry: formData.addressCountry || undefined,
+        // Emergency contact fields
+        emergencyContactName: formData.emergencyContactName || undefined,
+        emergencyContactPhone: formData.emergencyContactPhone || undefined,
+        emergencyContactRelationship: formData.emergencyContactRelationship || undefined,
         ...(formData.role === "doctor" && {
           licenseNumber: formData.licenseNumber,
           specialization: formData.specialization,
@@ -291,19 +311,20 @@ export default function RegisterForm() {
               </div>
             </div>
 
-            {/* Optional Fields */}
+            {/* Personal Information */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label
                   htmlFor="dateOfBirth"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Date of birth
+                  Date of birth <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="dateOfBirth"
                   name="dateOfBirth"
                   type="date"
+                  required
                   className="input-field mt-1"
                   value={formData.dateOfBirth}
                   onChange={handleChange}
@@ -315,18 +336,191 @@ export default function RegisterForm() {
                   htmlFor="phoneNumber"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Phone number
+                  Phone number <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="phoneNumber"
                   name="phoneNumber"
                   type="tel"
+                  required
                   className="input-field mt-1"
-                  placeholder="Phone number"
+                  placeholder="+1 (555) 123-4567"
                   value={formData.phoneNumber}
                   onChange={handleChange}
                   disabled={isLoading}
                 />
+              </div>
+            </div>
+
+            {/* Address Section */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Address Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="addressStreet"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Street address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="addressStreet"
+                    name="addressStreet"
+                    type="text"
+                    required
+                    className="input-field mt-1"
+                    placeholder="123 Main Street, Apt 4B"
+                    value={formData.addressStreet}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="addressCity"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="addressCity"
+                      name="addressCity"
+                      type="text"
+                      required
+                      className="input-field mt-1"
+                      placeholder="City"
+                      value={formData.addressCity}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="addressState"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      State/Province <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="addressState"
+                      name="addressState"
+                      type="text"
+                      required
+                      className="input-field mt-1"
+                      placeholder="State"
+                      value={formData.addressState}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="addressZip"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      ZIP/Postal code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="addressZip"
+                      name="addressZip"
+                      type="text"
+                      required
+                      className="input-field mt-1"
+                      placeholder="12345"
+                      value={formData.addressZip}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="addressCountry"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Country <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="addressCountry"
+                      name="addressCountry"
+                      type="text"
+                      required
+                      className="input-field mt-1"
+                      placeholder="United States"
+                      value={formData.addressCountry}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Emergency Contact Section */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Emergency Contact</h3>
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="emergencyContactName"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Contact name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="emergencyContactName"
+                    name="emergencyContactName"
+                    type="text"
+                    required
+                    className="input-field mt-1"
+                    placeholder="Full name"
+                    value={formData.emergencyContactName}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="emergencyContactPhone"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Contact phone <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="emergencyContactPhone"
+                      name="emergencyContactPhone"
+                      type="tel"
+                      required
+                      className="input-field mt-1"
+                      placeholder="+1 (555) 987-6543"
+                      value={formData.emergencyContactPhone}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="emergencyContactRelationship"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Relationship <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="emergencyContactRelationship"
+                      name="emergencyContactRelationship"
+                      type="text"
+                      required
+                      className="input-field mt-1"
+                      placeholder="Spouse, Parent, etc."
+                      value={formData.emergencyContactRelationship}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

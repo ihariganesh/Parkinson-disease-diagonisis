@@ -18,6 +18,22 @@ class UserCreate(BaseModel):
     first_name: str
     last_name: str
     role: str = "PATIENT"  # PATIENT or DOCTOR
+    date_of_birth: str = None
+    phone_number: str = None
+    # Address fields
+    address_street: str = None
+    address_city: str = None
+    address_state: str = None
+    address_zip: str = None
+    address_country: str = None
+    # Emergency contact fields
+    emergency_contact_name: str = None
+    emergency_contact_phone: str = None
+    emergency_contact_relationship: str = None
+    # Doctor-specific fields
+    license_number: str = None
+    specialization: str = None
+    hospital: str = None
 
 class UserResponse(BaseModel):
     id: str
@@ -51,6 +67,14 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     # Convert role string to enum
     role_enum = UserRole.PATIENT if user_data.role.upper() == "PATIENT" else UserRole.DOCTOR
     
+    # Parse date_of_birth if provided
+    date_of_birth = None
+    if user_data.date_of_birth:
+        try:
+            date_of_birth = datetime.strptime(user_data.date_of_birth, "%Y-%m-%d")
+        except ValueError:
+            pass
+    
     db_user = User(
         id=user_id,
         email=user_data.email,
@@ -58,6 +82,18 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         first_name=user_data.first_name,
         last_name=user_data.last_name,
         role=role_enum,
+        date_of_birth=date_of_birth,
+        phone_number=user_data.phone_number,
+        # Address fields
+        address_street=user_data.address_street,
+        address_city=user_data.address_city,
+        address_state=user_data.address_state,
+        address_zip=user_data.address_zip,
+        address_country=user_data.address_country,
+        # Emergency contact fields
+        emergency_contact_name=user_data.emergency_contact_name,
+        emergency_contact_phone=user_data.emergency_contact_phone,
+        emergency_contact_relationship=user_data.emergency_contact_relationship,
         is_active=True
     )
     
