@@ -208,7 +208,8 @@ const ReportsPage = () => {
   ];
 
   // Filter reports based on active tab
-  const filteredReports = reports.filter(() => {
+  const filteredReports = (reports || []).filter((report) => {
+    if (!report) return false;
     if (activeTab === 'all') return true;
     // Add filtering logic based on report type when available
     return true;
@@ -417,7 +418,7 @@ const ReportsPage = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredReports.map(report => (
+                {filteredReports.map(report => report && (
                   <div key={report.id} className="relative">
                     {isSelectionMode && (
                       <div className="absolute top-4 left-4 z-10">
@@ -427,7 +428,7 @@ const ReportsPage = () => {
                             checked={selectedReportIds.has(report.id)}
                             onChange={() => handleToggleSelection(report.id)}
                             className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                            aria-label={`Select report from ${new Date(report.createdAt).toLocaleDateString()}`}
+                            aria-label={`Select report from ${new Date(report.createdAt || Date.now()).toLocaleDateString()}`}
                           />
                         </label>
                       </div>
@@ -446,7 +447,7 @@ const ReportsPage = () => {
           </section>
 
           {/* 2. Progress Tracking Charts */}
-          {reports.length > 0 && (
+          {reports && reports.length > 0 && (
             <section>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <ArrowTrendingUpIcon className="h-6 w-6 text-green-600" />
