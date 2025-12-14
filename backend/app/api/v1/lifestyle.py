@@ -132,7 +132,7 @@ async def generate_lifestyle_recommendations(
             id=str(uuid.uuid4()),
             report_id=report_id,
             recommendations=recommendations,
-            metadata={
+            generation_metadata={
                 'age': age,
                 'gender': gender,
                 'location': location,

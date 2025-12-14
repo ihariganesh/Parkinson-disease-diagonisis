@@ -29,7 +29,7 @@ def add_cache_table():
                     id VARCHAR PRIMARY KEY,
                     report_id VARCHAR NOT NULL UNIQUE,
                     recommendations JSON NOT NULL,
-                    metadata JSON,
+                    generation_metadata JSON,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     expires_at DATETIME,
                     FOREIGN KEY (report_id) REFERENCES diagnosis_reports(id)
