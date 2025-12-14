@@ -20,6 +20,7 @@ class UserCreate(BaseModel):
     role: str = "PATIENT"  # PATIENT or DOCTOR
     date_of_birth: str = None
     phone_number: str = None
+    gender: str = None  # male, female, other, prefer_not_to_say
     # Address fields
     address_street: str = None
     address_city: str = None
@@ -84,6 +85,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         role=role_enum,
         date_of_birth=date_of_birth,
         phone_number=user_data.phone_number,
+        gender=user_data.gender,
         # Address fields
         address_street=user_data.address_street,
         address_city=user_data.address_city,

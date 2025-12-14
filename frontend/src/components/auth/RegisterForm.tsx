@@ -14,6 +14,7 @@ export default function RegisterForm() {
     role: "patient" as "patient" | "doctor",
     dateOfBirth: "",
     phoneNumber: "",
+    gender: "",
     // Address fields
     addressStreet: "",
     addressCity: "",
@@ -64,6 +65,7 @@ export default function RegisterForm() {
         role: formData.role,
         dateOfBirth: formData.dateOfBirth || undefined,
         phoneNumber: formData.phoneNumber || undefined,
+        gender: formData.gender || undefined,
         // Address fields
         addressStreet: formData.addressStreet || undefined,
         addressCity: formData.addressCity || undefined,
@@ -350,6 +352,30 @@ export default function RegisterForm() {
                   disabled={isLoading}
                 />
               </div>
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label
+                htmlFor="gender"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Gender
+              </label>
+              <select
+                id="gender"
+                name="gender"
+                className="input-field mt-1"
+                value={formData.gender}
+                onChange={handleChange}
+                disabled={isLoading}
+              >
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+                <option value="prefer_not_to_say">Prefer not to say</option>
+              </select>
             </div>
 
             {/* Address Section */}

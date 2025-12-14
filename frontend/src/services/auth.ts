@@ -52,6 +52,7 @@ export class AuthService {
           role: userData.role || 'PATIENT',
           date_of_birth: userData.dateOfBirth,
           phone_number: userData.phoneNumber,
+          gender: userData.gender,
           // Address fields
           address_street: userData.addressStreet,
           address_city: userData.addressCity,

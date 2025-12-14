@@ -41,6 +41,9 @@ class User(Base):
     phone_number = Column(String, nullable=True)
     profile_picture = Column(String, nullable=True)
     
+    # Personal information
+    gender = Column(String, nullable=True)  # male, female, other, prefer_not_to_say
+    
     # Address fields
     address_street = Column(String, nullable=True)
     address_city = Column(String, nullable=True)

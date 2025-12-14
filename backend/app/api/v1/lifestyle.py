@@ -50,8 +50,28 @@ async def generate_lifestyle_recommendations(
                 detail="Diagnosis report not found"
             )
         
-        # Calculate age from date of birth
+        # Get user demographics
         age = current_user.age if hasattr(current_user, 'age') else 50  # Default if not available
+        gender = getattr(current_user, 'gender', 'not_specified')
+        location = {
+            'city': getattr(current_user, 'address_city', None),
+            'state': getattr(current_user, 'address_state', None),
+            'country': getattr(current_user, 'address_country', None)
+        }
+        
+        # Determine disease severity
+        stage = getattr(report, 'stage', 0)
+        confidence = float(report.confidence)
+        if stage == 0 and confidence < 0.3:
+            severity = "Healthy - Low Risk"
+        elif stage == 0:
+            severity = "Healthy - Monitor Regularly"
+        elif stage == 1:
+            severity = "Early Stage - Mild Symptoms"
+        elif stage == 2:
+            severity = "Moderate Stage - Active Management"
+        else:
+            severity = "Advanced Stage - Comprehensive Care"
         
         # Prepare symptoms data from multimodal_analysis
         multimodal = report.multimodal_analysis if report.multimodal_analysis else {}
@@ -64,12 +84,16 @@ async def generate_lifestyle_recommendations(
         # Get Gemini service
         gemini_service = get_gemini_service()
         
-        # Generate recommendations
+        # Generate recommendations with full demographics
         recommendations = await gemini_service.generate_recommendations(
             diagnosis=report.final_diagnosis.value if hasattr(report.final_diagnosis, 'value') else str(report.final_diagnosis),
             pd_probability=float(report.confidence * 100),
             confidence=float(report.confidence * 100),
             age=age,
+            gender=gender,
+            location=location,
+            severity=severity,
+            stage=stage,
             symptoms=symptoms,
             medical_history=report.doctor_notes
         )

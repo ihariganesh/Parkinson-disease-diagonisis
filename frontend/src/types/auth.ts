@@ -47,6 +47,15 @@ export interface RegisterData {
   role?: string;
   dateOfBirth?: string;
   phoneNumber?: string;
+  gender?: string;
+  addressStreet?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressZip?: string;
+  addressCountry?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelationship?: string;
   licenseNumber?: string;
   specialization?: string;
   hospital?: string;

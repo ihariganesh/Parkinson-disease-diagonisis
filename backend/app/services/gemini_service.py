@@ -41,6 +41,10 @@ class GeminiLifestyleService:
         pd_probability: float,
         confidence: float,
         age: int,
+        gender: str = 'not_specified',
+        location: Optional[Dict[str, Any]] = None,
+        severity: str = 'Unknown',
+        stage: int = 0,
         symptoms: Optional[Dict[str, Any]] = None,
         medical_history: Optional[str] = None
     ) -> Dict[str, Any]:
@@ -52,6 +56,10 @@ class GeminiLifestyleService:
             pd_probability: Parkinson's disease probability (0-100)
             confidence: Model confidence level (0-100)
             age: Patient age
+            gender: Patient gender (male/female/other/not_specified)
+            location: Patient location (city, state, country)
+            severity: Disease severity level
+            stage: Disease stage (0-4)
             symptoms: Dictionary of detected symptoms
             medical_history: Additional medical history
             
@@ -63,9 +71,10 @@ class GeminiLifestyleService:
                 print("❌ Gemini model not initialized")
                 return self._get_fallback_recommendations(diagnosis, age)
             
-            # Build comprehensive prompt
+            # Build comprehensive prompt with demographics
             prompt = self._build_prompt(
-                diagnosis, pd_probability, confidence, age, symptoms, medical_history
+                diagnosis, pd_probability, confidence, age, gender, 
+                location, severity, stage, symptoms, medical_history
             )
             
             # Generate content
@@ -80,7 +89,11 @@ class GeminiLifestyleService:
                 'diagnosis': diagnosis,
                 'pd_probability': pd_probability,
                 'confidence': confidence,
-                'age': age
+                'age': age,
+                'gender': gender,
+                'location': location,
+                'severity': severity,
+                'stage': stage
             }
             
             return recommendations
@@ -95,10 +108,25 @@ class GeminiLifestyleService:
         pd_probability: float,
         confidence: float,
         age: int,
+        gender: str,
+        location: Optional[Dict[str, Any]],
+        severity: str,
+        stage: int,
         symptoms: Optional[Dict[str, Any]],
         medical_history: Optional[str]
     ) -> str:
-        """Build comprehensive prompt for Gemini"""
+        """Build comprehensive prompt for Gemini with demographics"""
+        
+        # Build location string
+        location_parts = []
+        if location:
+            if location.get('city'):
+                location_parts.append(location['city'])
+            if location.get('state'):
+                location_parts.append(location['state'])
+            if location.get('country'):
+                location_parts.append(location['country'])
+        location_text = ', '.join(location_parts) if location_parts else 'Not specified'
         
         symptoms_text = ""
         if symptoms:
@@ -111,11 +139,25 @@ class GeminiLifestyleService:
         prompt = f"""
 You are an expert neurologist and lifestyle medicine specialist. Generate comprehensive, personalized lifestyle recommendations for a patient with the following profile:
 
-**Patient Profile:**
+**Patient Demographics:**
+- Age: {age} years
+- Gender: {gender}
+- Location: {location_text}
+
+**Clinical Profile:**
 - Diagnosis: {diagnosis}
+- Disease Stage: {stage} (0-4 scale)
+- Severity: {severity}
 - Parkinson's Disease Probability: {pd_probability:.1f}%
-- AI Confidence Level: {confidence:.1f}%
-- Age: {age} years{symptoms_text}{history_text}
+- AI Confidence Level: {confidence:.1f}%{symptoms_text}{history_text}
+
+**Task:**
+Generate highly personalized lifestyle recommendations considering:
+1. **Age-Appropriate Activities**: Exercises and activities suitable for {age}-year-old patients
+2. **Gender-Specific Health**: Address {gender}-specific health considerations and risks
+3. **Location-Based Recommendations**: Consider climate, environment, and healthcare resources in {location_text}
+4. **Disease Severity**: Tailor recommendations for {severity}
+5. **Cultural Context**: Consider dietary and lifestyle habits common in {location_text}
 
 **Task:**
 Generate detailed, actionable lifestyle recommendations in the following categories:
