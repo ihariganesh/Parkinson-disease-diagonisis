@@ -48,20 +48,34 @@ const ReportsPage = () => {
       setError(null);
 
       const [reportsResponse, uploadsResponse] = await Promise.all([
-        medicalService.getDiagnosisReports(state.user?.id, 1, 50),
-        medicalService.getMedicalData(state.user?.id, undefined, 1, 50),
+        medicalService.getDiagnosisReports(state.user?.id, 1, 50).catch(err => {
+          console.error('Reports fetch error:', err);
+          return { success: false, data: null, error: err.message };
+        }),
+        medicalService.getMedicalData(state.user?.id, undefined, 1, 50).catch(err => {
+          console.error('Uploads fetch error:', err);
+          return { success: false, data: null, error: err.message };
+        }),
       ]);
 
-      if (reportsResponse.success && reportsResponse.data) {
-        setReports(reportsResponse.data.items || []);
+      if (reportsResponse && reportsResponse.success && reportsResponse.data) {
+        const items = Array.isArray(reportsResponse.data.items) ? reportsResponse.data.items : [];
+        setReports(items);
+      } else {
+        setReports([]);
       }
 
-      if (uploadsResponse.success && uploadsResponse.data) {
-        setUploads(uploadsResponse.data.items || []);
+      if (uploadsResponse && uploadsResponse.success && uploadsResponse.data) {
+        const items = Array.isArray(uploadsResponse.data.items) ? uploadsResponse.data.items : [];
+        setUploads(items);
+      } else {
+        setUploads([]);
       }
     } catch (err: any) {
       console.error('Error loading reports:', err);
       setError(err.message || 'Failed to load reports');
+      setReports([]);
+      setUploads([]);
     } finally {
       setLoading(false);
     }
@@ -261,7 +275,7 @@ const ReportsPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Reports</p>
-                  <p className="text-2xl font-bold text-gray-900">{reports.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{reports?.length || 0}</p>
                 </div>
                 <DocumentTextIcon className="h-8 w-8 text-blue-600" />
               </div>
@@ -271,7 +285,7 @@ const ReportsPage = () => {
                 <div>
                   <p className="text-sm text-gray-600">Verified Reports</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {reports.filter(r => r.doctorVerified).length}
+                    {reports?.filter(r => r?.doctorVerified)?.length || 0}
                   </p>
                 </div>
                 <CheckCircleIcon className="h-8 w-8 text-green-600" />
