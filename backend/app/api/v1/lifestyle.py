@@ -16,6 +16,7 @@ from ...api.v1.endpoints.auth import get_current_user
 router = APIRouter(prefix="/lifestyle", tags=["lifestyle"])
 
 
+@router.get("/recommendations/{report_id}")
 @router.post("/recommendations/{report_id}")
 async def generate_lifestyle_recommendations(
     report_id: int,
