@@ -36,7 +36,7 @@ async def generate_lifestyle_recommendations(
     """
     try:
         # Import here to avoid circular imports
-        from ...models.medical import DiagnosisReport
+        from ...db.models import DiagnosisReport
         
         # Get diagnosis report
         report = db.query(DiagnosisReport).filter(
