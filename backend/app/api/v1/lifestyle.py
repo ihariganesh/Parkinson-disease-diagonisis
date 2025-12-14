@@ -19,7 +19,7 @@ router = APIRouter(prefix="/lifestyle", tags=["lifestyle"])
 @router.get("/recommendations/{report_id}")
 @router.post("/recommendations/{report_id}")
 async def generate_lifestyle_recommendations(
-    report_id: int,
+    report_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
