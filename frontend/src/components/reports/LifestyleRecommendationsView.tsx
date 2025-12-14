@@ -45,7 +45,14 @@ const LifestyleRecommendationsView = ({ reportId }: LifestyleRecommendationsView
         }
       );
 
-      setRecommendations(response.data.recommendations || []);
+      // Convert recommendations object to array format
+      const recsData = response.data.recommendations || {};
+      const recsArray = Object.keys(recsData).map(category => ({
+        category: category,
+        recommendations: Array.isArray(recsData[category]) ? recsData[category] : []
+      }));
+      
+      setRecommendations(recsArray);
     } catch (err: any) {
       console.error('Error loading recommendations:', err);
       setError(err.response?.data?.detail || 'Failed to load recommendations');
