@@ -22,9 +22,18 @@ class GeminiLifestyleService:
         """
         self.api_key = api_key or os.getenv('GEMINI_API_KEY', 'AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM')
         genai.configure(api_key=self.api_key)
-        # Use gemini-1.5-flash which is the latest free-tier model
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
-        print("✅ Gemini AI service initialized with gemini-1.5-flash")
+        # Use gemini-2.0-flash-exp which is available in the free tier
+        try:
+            self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            print("✅ Gemini AI service initialized with gemini-2.0-flash-exp")
+        except Exception as e:
+            print(f"⚠️ Failed to load gemini-2.0-flash-exp, trying gemini-pro: {e}")
+            try:
+                self.model = genai.GenerativeModel('models/gemini-pro')
+                print("✅ Gemini AI service initialized with gemini-pro")
+            except Exception as e2:
+                print(f"❌ Failed to initialize any Gemini model: {e2}")
+                self.model = None
     
     async def generate_recommendations(
         self,
@@ -50,6 +59,10 @@ class GeminiLifestyleService:
             Dictionary containing categorized recommendations
         """
         try:
+            if self.model is None:
+                print("❌ Gemini model not initialized")
+                return self._get_fallback_recommendations(diagnosis, age)
+            
             # Build comprehensive prompt
             prompt = self._build_prompt(
                 diagnosis, pd_probability, confidence, age, symptoms, medical_history
