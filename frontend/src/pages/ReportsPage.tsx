@@ -12,13 +12,13 @@ import {
   ArrowTrendingUpIcon,
   CalendarIcon,
 } from '@heroicons/react/24/outline';
-import ReportCard from '../components/reports/ReportCard.tsx';
-import AnalysisTimeline from '../components/reports/AnalysisTimeline.tsx';
-import UploadedFilesList from '../components/reports/UploadedFilesList.tsx';
-import ProgressCharts from '../components/reports/ProgressCharts.tsx';
-import ReportDetailsModal from '../components/reports/ReportDetailsModal.tsx';
-import LifestyleRecommendationsView from '../components/reports/LifestyleRecommendationsView.tsx';
-import ReportFilters from '../components/reports/ReportFilters.tsx';
+import ReportCard from '../components/reports/ReportCard';
+import AnalysisTimeline from '../components/reports/AnalysisTimeline';
+import UploadedFilesList from '../components/reports/UploadedFilesList';
+import ProgressCharts from '../components/reports/ProgressCharts';
+import ReportDetailsModal from '../components/reports/ReportDetailsModal';
+import LifestyleRecommendationsView from '../components/reports/LifestyleRecommendationsView';
+import ReportFilters from '../components/reports/ReportFilters';
 
 type TabType = 'all' | 'diagnosis' | 'handwriting' | 'voice' | 'dat_scan';
 
