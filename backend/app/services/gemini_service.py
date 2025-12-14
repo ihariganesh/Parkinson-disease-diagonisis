@@ -22,8 +22,9 @@ class GeminiLifestyleService:
         """
         self.api_key = api_key or os.getenv('GEMINI_API_KEY', 'AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM')
         genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
-        print("✅ Gemini AI service initialized")
+        # Use gemini-1.5-flash which is the latest free-tier model
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        print("✅ Gemini AI service initialized with gemini-1.5-flash")
     
     async def generate_recommendations(
         self,
