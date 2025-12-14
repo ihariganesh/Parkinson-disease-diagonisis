@@ -41,7 +41,7 @@ async def generate_lifestyle_recommendations(
         # Get diagnosis report
         report = db.query(DiagnosisReport).filter(
             DiagnosisReport.id == report_id,
-            DiagnosisReport.user_id == current_user.id
+            DiagnosisReport.patient_id == current_user.id
         ).first()
         
         if not report:
@@ -53,11 +53,12 @@ async def generate_lifestyle_recommendations(
         # Calculate age from date of birth
         age = current_user.age if hasattr(current_user, 'age') else 50  # Default if not available
         
-        # Prepare symptoms data
+        # Prepare symptoms data from multimodal_analysis
+        multimodal = report.multimodal_analysis if report.multimodal_analysis else {}
         symptoms = {
-            'dat_scan': report.datScanResult if hasattr(report, 'datScanResult') else None,
-            'handwriting': report.handwritingResult if hasattr(report, 'handwritingResult') else None,
-            'voice': report.voiceResult if hasattr(report, 'voiceResult') else None
+            'dat_scan': multimodal.get('dat_scan'),
+            'handwriting': multimodal.get('handwriting'),
+            'voice': multimodal.get('voice')
         }
         
         # Get Gemini service
@@ -65,12 +66,12 @@ async def generate_lifestyle_recommendations(
         
         # Generate recommendations
         recommendations = await gemini_service.generate_recommendations(
-            diagnosis=report.finalDiagnosis,
+            diagnosis=report.final_diagnosis.value if hasattr(report.final_diagnosis, 'value') else str(report.final_diagnosis),
             pd_probability=float(report.confidence * 100),
             confidence=float(report.confidence * 100),
             age=age,
             symptoms=symptoms,
-            medical_history=report.additionalNotes if hasattr(report, 'additionalNotes') else None
+            medical_history=report.doctor_notes
         )
         
         return {
