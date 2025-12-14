@@ -38,9 +38,8 @@ const LifestyleRecommendationsView = ({ reportId }: LifestyleRecommendationsView
       setError(null);
       const token = localStorage.getItem('auth_token');
       
-      const response = await axios.post(
+      const response = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/lifestyle/recommendations/${reportId}`,
-        {},
         {
           headers: { Authorization: `Bearer ${token}` },
         }
