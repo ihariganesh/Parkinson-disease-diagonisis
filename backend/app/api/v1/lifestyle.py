@@ -20,6 +20,7 @@ router = APIRouter(prefix="/lifestyle", tags=["lifestyle"])
 @router.post("/recommendations/{report_id}")
 async def generate_lifestyle_recommendations(
     report_id: str,
+    force_regenerate: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -28,6 +29,7 @@ async def generate_lifestyle_recommendations(
     
     Args:
         report_id: ID of the diagnosis report
+        force_regenerate: Force regeneration of recommendations (ignore cache)
         current_user: Authenticated user
         db: Database session
         
@@ -36,7 +38,7 @@ async def generate_lifestyle_recommendations(
     """
     try:
         # Import here to avoid circular imports
-        from ...db.models import DiagnosisReport
+        from ...db.models import DiagnosisReport, CachedRecommendations
         
         # Get diagnosis report
         report = db.query(DiagnosisReport).filter(
@@ -49,6 +51,24 @@ async def generate_lifestyle_recommendations(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Diagnosis report not found"
             )
+        
+        # Check if cached recommendations exist (unless force_regenerate)
+        if not force_regenerate:
+            cached = db.query(CachedRecommendations).filter(
+                CachedRecommendations.report_id == report_id
+            ).first()
+            
+            if cached:
+                # Check if cache is still valid (24 hours)
+                if cached.expires_at is None or cached.expires_at > datetime.now():
+                    print(f"✅ Returning cached recommendations for report {report_id}")
+                    return {
+                        'success': True,
+                        'report_id': report_id,
+                        'recommendations': cached.recommendations,
+                        'generated_at': cached.created_at.isoformat(),
+                        'cached': True
+                    }
         
         # Get user demographics
         age = current_user.age if hasattr(current_user, 'age') else 50  # Default if not available
@@ -98,11 +118,39 @@ async def generate_lifestyle_recommendations(
             medical_history=report.doctor_notes
         )
         
+        # Cache the recommendations for 24 hours
+        from datetime import timedelta
+        import uuid
+        
+        # Remove old cache if exists
+        db.query(CachedRecommendations).filter(
+            CachedRecommendations.report_id == report_id
+        ).delete()
+        
+        # Create new cache entry
+        cached_rec = CachedRecommendations(
+            id=str(uuid.uuid4()),
+            report_id=report_id,
+            recommendations=recommendations,
+            metadata={
+                'age': age,
+                'gender': gender,
+                'location': location,
+                'severity': severity,
+                'stage': stage
+            },
+            expires_at=datetime.now() + timedelta(hours=24)
+        )
+        db.add(cached_rec)
+        db.commit()
+        print(f"✅ Cached recommendations for report {report_id}")
+        
         return {
             'success': True,
             'report_id': report_id,
             'recommendations': recommendations,
-            'generated_at': datetime.now().isoformat()
+            'generated_at': datetime.now().isoformat(),
+            'cached': False
         }
         
     except Exception as e:

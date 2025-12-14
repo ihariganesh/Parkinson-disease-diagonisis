@@ -181,6 +181,20 @@ class LifestyleSuggestion(Base):
     report = relationship("DiagnosisReport", back_populates="lifestyle_suggestions")
 
 
+class CachedRecommendations(Base):
+    __tablename__ = "cached_recommendations"
+
+    id = Column(String, primary_key=True, index=True)
+    report_id = Column(String, ForeignKey("diagnosis_reports.id"), nullable=False, unique=True)
+    recommendations = Column(JSON, nullable=False)
+    metadata = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    report = relationship("DiagnosisReport")
+
+
 class HandwritingAnalysis(Base):
     __tablename__ = "handwriting_analyses"
 
