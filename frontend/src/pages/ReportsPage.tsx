@@ -17,7 +17,6 @@ import AnalysisTimeline from '../components/reports/AnalysisTimeline';
 import UploadedFilesList from '../components/reports/UploadedFilesList';
 import ProgressCharts from '../components/reports/ProgressCharts';
 import ReportDetailsModal from '../components/reports/ReportDetailsModal';
-import LifestyleRecommendationsView from '../components/reports/LifestyleRecommendationsView';
 import ReportFilters from '../components/reports/ReportFilters';
 
 type TabType = 'all' | 'diagnosis' | 'handwriting' | 'voice' | 'dat_scan';
@@ -491,16 +490,6 @@ const ReportsPage = () => {
             </h2>
             <UploadedFilesList uploads={uploads} onRefresh={loadReportsData} />
           </section>
-
-          {/* 5. Lifestyle Recommendations */}
-          {reports.length > 0 && reports[0] && (
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                AI-Powered Lifestyle Recommendations
-              </h2>
-              <LifestyleRecommendationsView reportId={reports[0].id} />
-            </section>
-          )}
         </div>
       </div>
 
