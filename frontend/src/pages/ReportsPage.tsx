@@ -39,44 +39,57 @@ const ReportsPage = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   useEffect(() => {
+    console.log('[ReportsPage] Component mounted, user:', state.user);
     loadReportsData();
   }, []);
 
   const loadReportsData = async () => {
+    console.log('[ReportsPage] Loading reports data...');
     try {
       setLoading(true);
       setError(null);
 
+      console.log('[ReportsPage] Fetching data for user:', state.user?.id);
       const [reportsResponse, uploadsResponse] = await Promise.all([
         medicalService.getDiagnosisReports(state.user?.id, 1, 50).catch(err => {
-          console.error('Reports fetch error:', err);
+          console.error('[ReportsPage] Reports fetch error:', err);
           return { success: false, data: null, error: err.message };
         }),
         medicalService.getMedicalData(state.user?.id, undefined, 1, 50).catch(err => {
-          console.error('Uploads fetch error:', err);
+          console.error('[ReportsPage] Uploads fetch error:', err);
           return { success: false, data: null, error: err.message };
         }),
       ]);
 
+      console.log('[ReportsPage] Reports response:', reportsResponse);
+      console.log('[ReportsPage] Uploads response:', uploadsResponse);
+
       if (reportsResponse && reportsResponse.success && reportsResponse.data) {
         const items = Array.isArray(reportsResponse.data.items) ? reportsResponse.data.items : [];
+        console.log('[ReportsPage] Setting reports:', items.length, 'items');
         setReports(items);
       } else {
+        console.log('[ReportsPage] No reports data, setting empty array');
         setReports([]);
       }
 
       if (uploadsResponse && uploadsResponse.success && uploadsResponse.data) {
         const items = Array.isArray(uploadsResponse.data.items) ? uploadsResponse.data.items : [];
+        console.log('[ReportsPage] Setting uploads:', items.length, 'items');
         setUploads(items);
       } else {
+        console.log('[ReportsPage] No uploads data, setting empty array');
         setUploads([]);
       }
+      
+      console.log('[ReportsPage] Data loading complete');
     } catch (err: any) {
-      console.error('Error loading reports:', err);
+      console.error('[ReportsPage] Error loading reports:', err);
       setError(err.message || 'Failed to load reports');
       setReports([]);
       setUploads([]);
     } finally {
+      console.log('[ReportsPage] Setting loading to false');
       setLoading(false);
     }
   };
@@ -215,7 +228,10 @@ const ReportsPage = () => {
     return true;
   });
 
+  console.log('[ReportsPage] Render - loading:', loading, 'error:', error, 'reports:', reports?.length);
+
   if (loading) {
+    console.log('[ReportsPage] Showing loading screen');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -227,6 +243,7 @@ const ReportsPage = () => {
   }
 
   if (error) {
+    console.log('[ReportsPage] Showing error screen:', error);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
