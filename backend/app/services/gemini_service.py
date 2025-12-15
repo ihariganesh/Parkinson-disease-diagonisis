@@ -20,8 +20,14 @@ class GeminiLifestyleService:
         Args:
             api_key: Google Gemini API key (defaults to env variable)
         """
-        self.api_key = api_key or os.getenv('GEMINI_API_KEY', 'AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM')
+        self.api_key = api_key or os.getenv('GEMINI_API_KEY')
+        if not self.api_key:
+            print("❌ GEMINI_API_KEY not found in environment variables")
+            self.model = None
+            return
+        
         genai.configure(api_key=self.api_key)
+        print(f"🔑 Using Gemini API key: {self.api_key[:20]}...")
         # Use gemini-2.0-flash-exp which is available in the free tier
         try:
             self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
@@ -382,5 +388,6 @@ def get_gemini_service() -> GeminiLifestyleService:
     """Get or create Gemini service singleton"""
     global _gemini_service
     if _gemini_service is None:
-        _gemini_service = GeminiLifestyleService()
+        from ..core.config import settings
+        _gemini_service = GeminiLifestyleService(api_key=settings.GEMINI_API_KEY)
     return _gemini_service
