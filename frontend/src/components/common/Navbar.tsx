@@ -16,6 +16,7 @@ const navigation = {
     { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
     { name: "Analysis", href: "/comprehensive", icon: SparklesIcon },
     { name: "Reports", href: "/reports", icon: ChartBarIcon },
+    { name: "Recommendations", href: "/recommendations", icon: SparklesIcon },
     { name: "Profile", href: "/profile", icon: UserCircleIcon },
   ],
   doctor: [
