@@ -31,6 +31,8 @@ const RecommendationsPage = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [diseaseCategory, setDiseaseCategory] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAiGenerated, setIsAiGenerated] = useState(true);
+  const [recommendationSource, setRecommendationSource] = useState<string>('');
 
   useEffect(() => {
     loadData();
@@ -52,7 +54,7 @@ const RecommendationsPage = () => {
       // Fetch latest diagnosis report
       const reportsResponse = await medicalService.getDiagnosisReports(state.user?.id, 1, 1);
       
-      if (reportsResponse.success && reportsResponse.data?.items?.length > 0) {
+      if (reportsResponse.success && reportsResponse.data?.items && reportsResponse.data.items.length > 0) {
         const report = reportsResponse.data.items[0];
         setLatestReport(report);
         
@@ -109,6 +111,12 @@ const RecommendationsPage = () => {
           }));
         
         setRecommendations(recsArray);
+        
+        // Check if AI-generated or fallback
+        const metadata = recsData.metadata || {};
+        const source = metadata.source || 'unknown';
+        setRecommendationSource(source);
+        setIsAiGenerated(source !== 'fallback_recommendations');
       }
     } catch (err: any) {
       console.error('Error loading recommendations:', err);
@@ -137,6 +145,12 @@ const RecommendationsPage = () => {
           }));
         
         setRecommendations(recsArray);
+        
+        // Check if AI-generated or fallback
+        const metadata = recsData.metadata || {};
+        const source = metadata.source || 'unknown';
+        setRecommendationSource(source);
+        setIsAiGenerated(source !== 'fallback_recommendations');
       }
     } catch (err: any) {
       console.error('Error regenerating recommendations:', err);
@@ -240,6 +254,26 @@ const RecommendationsPage = () => {
             </button>
           </div>
         </div>
+
+        {/* AI Status Warning Banner */}
+        {!isAiGenerated && (
+          <div className="mb-6 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <ExclamationCircleIcon className="h-6 w-6 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-900 mb-1">
+                  ⚠️ Generic Recommendations (AI Temporarily Unavailable)
+                </h3>
+                <p className="text-sm text-orange-800 mb-2">
+                  The Gemini AI service is currently unavailable (quota exceeded). You are seeing <strong>generic, template-based recommendations</strong> that do NOT consider your specific age, gender, or location.
+                </p>
+                <p className="text-sm text-orange-800">
+                  <strong>What this means:</strong> These are general health tips, not personalized AI guidance. For truly personalized recommendations, please try regenerating later when the AI service is restored.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* User Profile & Disease Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -354,13 +388,55 @@ const RecommendationsPage = () => {
                       </h3>
                     </div>
                     
-                    <ul className="space-y-3">
-                      {rec.recommendations.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-3">
-                          <CheckCircleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm leading-relaxed">{item}</span>
-                        </li>
-                      ))}
+                    <ul className="space-y-4">
+                      {rec.recommendations.map((item, idx) => {
+                        // Handle both string and object formats
+                        if (typeof item === 'string') {
+                          return (
+                            <li key={idx} className="flex items-start gap-3">
+                              <CheckCircleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                              <span className="text-sm leading-relaxed">{item}</span>
+                            </li>
+                          );
+                        } else if (typeof item === 'object' && item !== null) {
+                          return (
+                            <li key={idx} className="border-l-2 border-gray-200 pl-4">
+                              <div className="flex items-start gap-3">
+                                <CheckCircleIcon className="h-5 w-5 flex-shrink-0 mt-0.5 text-green-600" />
+                                <div className="flex-1">
+                                  {item.title && (
+                                    <h4 className="font-semibold text-gray-900 mb-1">{item.title}</h4>
+                                  )}
+                                  {item.description && (
+                                    <p className="text-sm text-gray-700 mb-2">{item.description}</p>
+                                  )}
+                                  <div className="flex flex-wrap gap-3 text-xs">
+                                    {item.frequency && (
+                                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                        📅 {item.frequency}
+                                      </span>
+                                    )}
+                                    {item.duration && (
+                                      <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                                        ⏱️ {item.duration}
+                                      </span>
+                                    )}
+                                    {item.intensity && (
+                                      <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                                        💪 {item.intensity}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {item.benefits && (
+                                    <p className="text-xs text-gray-600 mt-2 italic">✨ {item.benefits}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        }
+                        return null;
+                      })}
                     </ul>
                   </div>
                 );
