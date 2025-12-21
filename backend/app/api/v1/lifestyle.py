@@ -10,7 +10,7 @@ from datetime import datetime
 
 from ...db.database import get_db
 from ...db.models import User
-from ...services.gemini_service import get_gemini_service
+from ...services.ai_service import get_ai_service
 from ...api.v1.endpoints.auth import get_current_user
 
 router = APIRouter(prefix="/lifestyle", tags=["lifestyle"])
@@ -101,11 +101,11 @@ async def generate_lifestyle_recommendations(
             'voice': multimodal.get('voice')
         }
         
-        # Get Gemini service
-        gemini_service = get_gemini_service()
+        # Get AI service (supports Groq, Gemini, etc.)
+        ai_service = get_ai_service()
         
         # Generate recommendations with full demographics
-        recommendations = await gemini_service.generate_recommendations(
+        recommendations = await ai_service.generate_recommendations(
             diagnosis=report.final_diagnosis.value if hasattr(report.final_diagnosis, 'value') else str(report.final_diagnosis),
             pd_probability=float(report.confidence * 100),
             confidence=float(report.confidence * 100),
@@ -117,6 +117,26 @@ async def generate_lifestyle_recommendations(
             symptoms=symptoms,
             medical_history=report.doctor_notes
         )
+        
+        # Add service status to response
+        metadata = recommendations.get('metadata', {})
+        provider = metadata.get('provider', 'Unknown')
+        source = metadata.get('source', 'fallback_recommendations')
+        is_ai_generated = source == 'ai'
+        
+        if not is_ai_generated:
+            recommendations['service_status'] = {
+                'ai_available': False,
+                'message': 'Generic recommendations (AI service unavailable)',
+                'reason': 'service_unavailable',
+                'provider': None
+            }
+        else:
+            recommendations['service_status'] = {
+                'ai_available': True,
+                'message': f'Personalized AI recommendations (powered by {provider})',
+                'provider': provider
+            }
         
         # Cache the recommendations for 24 hours
         from datetime import timedelta

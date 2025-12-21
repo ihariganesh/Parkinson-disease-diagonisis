@@ -1,0 +1,651 @@
+"""
+Doctor-Patient Invitation System
+Realistic telemedicine approach for linking doctors and patients
+"""
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
+from typing import List, Optional
+from datetime import datetime, timedelta
+from pydantic import BaseModel
+import uuid
+import random
+import string
+
+from ....db.database import get_db
+from ....db.models import (
+    User, UserRole, DoctorInvitation, DoctorPatientLinkRequest,
+    DoctorPatientAssignment, InvitationStatus
+)
+from .auth import get_current_user
+
+router = APIRouter(prefix="/invitation", tags=["invitation"])
+
+
+# ==================== PYDANTIC MODELS ====================
+
+class CreateInvitationRequest(BaseModel):
+    max_uses: int = 1
+    expires_in_days: Optional[int] = 30
+    description: Optional[str] = None
+
+
+class InvitationResponse(BaseModel):
+    invitation_id: str
+    invitation_code: str
+    invitation_link: str
+    max_uses: int
+    current_uses: int
+    expires_at: Optional[datetime]
+    is_active: bool
+    description: Optional[str]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class UseLinkCodeRequest(BaseModel):
+    invitation_code: str
+    message: Optional[str] = None
+
+
+class LinkRequestResponse(BaseModel):
+    request_id: str
+    patient_name: str
+    patient_email: str
+    doctor_name: str
+    status: str
+    patient_message: Optional[str]
+    requested_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ApproveRejectRequest(BaseModel):
+    request_id: str
+    response_message: Optional[str] = None
+
+
+# ==================== HELPER FUNCTIONS ====================
+
+def generate_invitation_code(length: int = 8) -> str:
+    """Generate a unique invitation code"""
+    # Format: XXXX-XXXX (easy to type and remember)
+    chars = string.ascii_uppercase + string.digits
+    code = ''.join(random.choice(chars) for _ in range(length))
+    return f"{code[:4]}-{code[4:]}"
+
+
+def verify_doctor_role(current_user: User):
+    """Verify user is a doctor"""
+    if current_user.role != UserRole.DOCTOR:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only doctors can access this endpoint"
+        )
+
+
+def verify_patient_role(current_user: User):
+    """Verify user is a patient"""
+    if current_user.role != UserRole.PATIENT:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only patients can access this endpoint"
+        )
+
+
+# ==================== DOCTOR ENDPOINTS ====================
+
+@router.post("/doctor/generate-code", response_model=InvitationResponse)
+async def generate_invitation_code_for_doctor(
+    invitation_request: CreateInvitationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Doctor generates a unique invitation code/link
+    
+    Features:
+    - Unique 8-character code (XXXX-XXXX format)
+    - Configurable max uses (single-use or multi-use)
+    - Optional expiration date
+    - Optional description
+    
+    Example: "ABCD-1234" valid for 30 days, 5 uses
+    """
+    verify_doctor_role(current_user)
+    
+    # Generate unique code
+    while True:
+        code = generate_invitation_code()
+        existing = db.query(DoctorInvitation).filter(
+            DoctorInvitation.invitation_code == code
+        ).first()
+        if not existing:
+            break
+    
+    # Calculate expiration
+    expires_at = None
+    if invitation_request.expires_in_days:
+        expires_at = datetime.now() + timedelta(days=invitation_request.expires_in_days)
+    
+    # Create invitation
+    invitation = DoctorInvitation(
+        id=str(uuid.uuid4()),
+        doctor_id=current_user.id,
+        invitation_code=code,
+        max_uses=invitation_request.max_uses,
+        current_uses=0,
+        expires_at=expires_at,
+        is_active=True,
+        description=invitation_request.description
+    )
+    
+    db.add(invitation)
+    db.commit()
+    db.refresh(invitation)
+    
+    # Generate shareable link
+    invitation_link = f"http://localhost:3000/link-doctor?code={code}"
+    
+    return InvitationResponse(
+        invitation_id=invitation.id,
+        invitation_code=invitation.invitation_code,
+        invitation_link=invitation_link,
+        max_uses=invitation.max_uses,
+        current_uses=invitation.current_uses,
+        expires_at=invitation.expires_at,
+        is_active=invitation.is_active,
+        description=invitation.description,
+        created_at=invitation.created_at
+    )
+
+
+@router.get("/doctor/my-codes", response_model=List[InvitationResponse])
+async def get_doctor_invitation_codes(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    active_only: bool = True
+):
+    """
+    Get all invitation codes generated by this doctor
+    
+    Shows:
+    - All codes created
+    - Usage statistics
+    - Expiration status
+    - Active/inactive status
+    """
+    verify_doctor_role(current_user)
+    
+    query = db.query(DoctorInvitation).filter(
+        DoctorInvitation.doctor_id == current_user.id
+    )
+    
+    if active_only:
+        query = query.filter(DoctorInvitation.is_active == True)
+    
+    invitations = query.order_by(DoctorInvitation.created_at.desc()).all()
+    
+    return [
+        InvitationResponse(
+            invitation_id=inv.id,
+            invitation_code=inv.invitation_code,
+            invitation_link=f"http://localhost:3000/link-doctor?code={inv.invitation_code}",
+            max_uses=inv.max_uses,
+            current_uses=inv.current_uses,
+            expires_at=inv.expires_at,
+            is_active=inv.is_active,
+            description=inv.description,
+            created_at=inv.created_at
+        )
+        for inv in invitations
+    ]
+
+
+@router.delete("/doctor/code/{invitation_id}")
+async def deactivate_invitation_code(
+    invitation_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Deactivate an invitation code
+    
+    Prevents new patients from using this code
+    Doesn't affect existing link requests
+    """
+    verify_doctor_role(current_user)
+    
+    invitation = db.query(DoctorInvitation).filter(
+        DoctorInvitation.id == invitation_id,
+        DoctorInvitation.doctor_id == current_user.id
+    ).first()
+    
+    if not invitation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invitation code not found"
+        )
+    
+    invitation.is_active = False
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": "Invitation code deactivated"
+    }
+
+
+@router.get("/doctor/pending-requests", response_model=List[LinkRequestResponse])
+async def get_pending_link_requests(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all pending patient link requests
+    
+    Shows patients waiting for approval:
+    - Patient name and email
+    - Optional message from patient
+    - Request timestamp
+    """
+    verify_doctor_role(current_user)
+    
+    requests = db.query(DoctorPatientLinkRequest).filter(
+        DoctorPatientLinkRequest.doctor_id == current_user.id,
+        DoctorPatientLinkRequest.status == InvitationStatus.PENDING
+    ).order_by(DoctorPatientLinkRequest.requested_at.desc()).all()
+    
+    result = []
+    for req in requests:
+        patient = db.query(User).filter(User.id == req.patient_id).first()
+        
+        result.append(LinkRequestResponse(
+            request_id=req.id,
+            patient_name=f"{patient.first_name} {patient.last_name}",
+            patient_email=patient.email,
+            doctor_name=f"Dr. {current_user.first_name} {current_user.last_name}",
+            status=req.status.value,
+            patient_message=req.patient_message,
+            requested_at=req.requested_at
+        ))
+    
+    return result
+
+
+@router.post("/doctor/approve-request")
+async def approve_patient_link_request(
+    approval: ApproveRejectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Approve a patient's link request
+    
+    Actions:
+    1. Updates request status to APPROVED
+    2. Creates DoctorPatientAssignment
+    3. Grants patient access to doctor
+    """
+    verify_doctor_role(current_user)
+    
+    # Get request
+    link_request = db.query(DoctorPatientLinkRequest).filter(
+        DoctorPatientLinkRequest.id == approval.request_id,
+        DoctorPatientLinkRequest.doctor_id == current_user.id,
+        DoctorPatientLinkRequest.status == InvitationStatus.PENDING
+    ).first()
+    
+    if not link_request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Link request not found or already processed"
+        )
+    
+    # Check if assignment already exists
+    existing_assignment = db.query(DoctorPatientAssignment).filter(
+        DoctorPatientAssignment.doctor_id == current_user.id,
+        DoctorPatientAssignment.patient_id == link_request.patient_id,
+        DoctorPatientAssignment.is_active == True
+    ).first()
+    
+    if existing_assignment:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Patient is already linked to this doctor"
+        )
+    
+    # Update request status
+    link_request.status = InvitationStatus.APPROVED
+    link_request.doctor_response = approval.response_message
+    link_request.approved_at = datetime.now()
+    
+    # Create assignment
+    assignment = DoctorPatientAssignment(
+        id=str(uuid.uuid4()),
+        doctor_id=current_user.id,
+        patient_id=link_request.patient_id,
+        link_request_id=link_request.id,
+        is_active=True,
+        notes=f"Approved via invitation code: {link_request.invitation.invitation_code}"
+    )
+    
+    db.add(assignment)
+    db.commit()
+    
+    patient = db.query(User).filter(User.id == link_request.patient_id).first()
+    
+    return {
+        "success": True,
+        "message": "Patient link request approved",
+        "patient_name": f"{patient.first_name} {patient.last_name}",
+        "assignment_id": assignment.id
+    }
+
+
+@router.post("/doctor/reject-request")
+async def reject_patient_link_request(
+    rejection: ApproveRejectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Reject a patient's link request
+    
+    Updates request status to REJECTED
+    Patient can try again with different code if available
+    """
+    verify_doctor_role(current_user)
+    
+    # Get request
+    link_request = db.query(DoctorPatientLinkRequest).filter(
+        DoctorPatientLinkRequest.id == rejection.request_id,
+        DoctorPatientLinkRequest.doctor_id == current_user.id,
+        DoctorPatientLinkRequest.status == InvitationStatus.PENDING
+    ).first()
+    
+    if not link_request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Link request not found or already processed"
+        )
+    
+    # Update request status
+    link_request.status = InvitationStatus.REJECTED
+    link_request.doctor_response = rejection.response_message
+    link_request.rejected_at = datetime.now()
+    
+    db.commit()
+    
+    patient = db.query(User).filter(User.id == link_request.patient_id).first()
+    
+    return {
+        "success": True,
+        "message": "Patient link request rejected",
+        "patient_name": f"{patient.first_name} {patient.last_name}"
+    }
+
+
+# ==================== PATIENT ENDPOINTS ====================
+
+@router.post("/patient/use-code")
+async def patient_use_invitation_code(
+    code_request: UseLinkCodeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Patient enters invitation code to request link with doctor
+    
+    Flow:
+    1. Patient enters code (XXXX-XXXX)
+    2. System validates code (active, not expired, has uses left)
+    3. Creates link request with status = PENDING
+    4. Doctor sees request in their dashboard
+    5. Doctor approves/rejects
+    """
+    verify_patient_role(current_user)
+    
+    # Find invitation
+    invitation = db.query(DoctorInvitation).filter(
+        DoctorInvitation.invitation_code == code_request.invitation_code.upper()
+    ).first()
+    
+    if not invitation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid invitation code"
+        )
+    
+    # Validate invitation
+    if not invitation.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This invitation code is no longer active"
+        )
+    
+    if invitation.expires_at and invitation.expires_at < datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This invitation code has expired"
+        )
+    
+    if invitation.current_uses >= invitation.max_uses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This invitation code has reached its maximum uses"
+        )
+    
+    # Check if patient already has a pending/approved request with this doctor
+    existing_request = db.query(DoctorPatientLinkRequest).filter(
+        DoctorPatientLinkRequest.patient_id == current_user.id,
+        DoctorPatientLinkRequest.doctor_id == invitation.doctor_id,
+        DoctorPatientLinkRequest.status.in_([InvitationStatus.PENDING, InvitationStatus.APPROVED])
+    ).first()
+    
+    if existing_request:
+        if existing_request.status == InvitationStatus.PENDING:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You already have a pending request with this doctor"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You are already linked with this doctor"
+            )
+    
+    # Create link request
+    link_request = DoctorPatientLinkRequest(
+        id=str(uuid.uuid4()),
+        patient_id=current_user.id,
+        doctor_id=invitation.doctor_id,
+        invitation_id=invitation.id,
+        status=InvitationStatus.PENDING,
+        patient_message=code_request.message
+    )
+    
+    db.add(link_request)
+    
+    # Increment invitation usage
+    invitation.current_uses += 1
+    
+    db.commit()
+    
+    # Get doctor info
+    doctor = db.query(User).filter(User.id == invitation.doctor_id).first()
+    
+    return {
+        "success": True,
+        "message": "Link request sent to doctor",
+        "request_id": link_request.id,
+        "doctor_name": f"Dr. {doctor.first_name} {doctor.last_name}",
+        "status": "pending",
+        "next_step": "Wait for doctor approval. You will be notified once approved."
+    }
+
+
+@router.get("/patient/my-requests", response_model=List[LinkRequestResponse])
+async def get_patient_link_requests(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all link requests made by this patient
+    
+    Shows:
+    - Doctor name
+    - Request status (pending/approved/rejected)
+    - Timestamps
+    - Doctor's response message
+    """
+    verify_patient_role(current_user)
+    
+    requests = db.query(DoctorPatientLinkRequest).filter(
+        DoctorPatientLinkRequest.patient_id == current_user.id
+    ).order_by(DoctorPatientLinkRequest.requested_at.desc()).all()
+    
+    result = []
+    for req in requests:
+        doctor = db.query(User).filter(User.id == req.doctor_id).first()
+        
+        result.append(LinkRequestResponse(
+            request_id=req.id,
+            patient_name=f"{current_user.first_name} {current_user.last_name}",
+            patient_email=current_user.email,
+            doctor_name=f"Dr. {doctor.first_name} {doctor.last_name}",
+            status=req.status.value,
+            patient_message=req.patient_message,
+            requested_at=req.requested_at
+        ))
+    
+    return result
+
+
+@router.get("/patient/my-doctors")
+async def get_patient_linked_doctors(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all doctors linked to this patient
+    
+    Shows approved doctor-patient relationships
+    """
+    verify_patient_role(current_user)
+    
+    assignments = db.query(DoctorPatientAssignment).filter(
+        DoctorPatientAssignment.patient_id == current_user.id,
+        DoctorPatientAssignment.is_active == True
+    ).all()
+    
+    doctors = []
+    for assignment in assignments:
+        doctor = db.query(User).filter(User.id == assignment.doctor_id).first()
+        
+        from ....db.models import Doctor
+        doctor_profile = db.query(Doctor).filter(Doctor.user_id == doctor.id).first()
+        
+        doctors.append({
+            "doctor_id": doctor.id,
+            "doctor_name": f"Dr. {doctor.first_name} {doctor.last_name}",
+            "email": doctor.email,
+            "specialization": doctor_profile.specialization if doctor_profile else "General",
+            "hospital": doctor_profile.hospital if doctor_profile else "N/A",
+            "linked_since": assignment.assigned_at,
+            "assignment_id": assignment.id
+        })
+    
+    return {
+        "success": True,
+        "count": len(doctors),
+        "doctors": doctors
+    }
+
+
+@router.delete("/patient/unlink-doctor/{assignment_id}")
+async def patient_unlink_doctor(
+    assignment_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Patient can unlink from a doctor
+    
+    Patient controls privacy - can revoke access anytime
+    """
+    verify_patient_role(current_user)
+    
+    assignment = db.query(DoctorPatientAssignment).filter(
+        DoctorPatientAssignment.id == assignment_id,
+        DoctorPatientAssignment.patient_id == current_user.id
+    ).first()
+    
+    if not assignment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Doctor assignment not found"
+        )
+    
+    assignment.is_active = False
+    db.commit()
+    
+    doctor = db.query(User).filter(User.id == assignment.doctor_id).first()
+    
+    return {
+        "success": True,
+        "message": f"Successfully unlinked from Dr. {doctor.last_name}",
+        "doctor_name": f"Dr. {doctor.first_name} {doctor.last_name}"
+    }
+
+
+# ==================== PUBLIC ENDPOINTS ====================
+
+@router.get("/validate-code/{code}")
+async def validate_invitation_code(
+    code: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Public endpoint to validate invitation code
+    
+    Returns doctor info without requiring authentication
+    Useful for displaying doctor details before patient logs in
+    """
+    invitation = db.query(DoctorInvitation).filter(
+        DoctorInvitation.invitation_code == code.upper()
+    ).first()
+    
+    if not invitation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid invitation code"
+        )
+    
+    # Check validity
+    is_valid = (
+        invitation.is_active and
+        (invitation.expires_at is None or invitation.expires_at > datetime.now()) and
+        invitation.current_uses < invitation.max_uses
+    )
+    
+    # Get doctor info
+    doctor = db.query(User).filter(User.id == invitation.doctor_id).first()
+    
+    from ....db.models import Doctor
+    doctor_profile = db.query(Doctor).filter(Doctor.user_id == doctor.id).first()
+    
+    return {
+        "valid": is_valid,
+        "invitation_code": invitation.invitation_code,
+        "doctor_name": f"Dr. {doctor.first_name} {doctor.last_name}",
+        "specialization": doctor_profile.specialization if doctor_profile else "General",
+        "hospital": doctor_profile.hospital if doctor_profile else "N/A",
+        "description": invitation.description,
+        "expires_at": invitation.expires_at,
+        "uses_remaining": invitation.max_uses - invitation.current_uses
+    }

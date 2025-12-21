@@ -28,11 +28,15 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
   const getDiagnosisLabel = (diagnosis: string) => {
     const labels: Record<string, string> = {
       healthy: 'Healthy - No PD',
+      early_stage: 'Early Stage PD',
+      moderate_stage: 'Moderate Stage PD',
+      advanced_stage: 'Advanced Stage PD',
+      // Legacy support
       early_pd: 'Early Stage PD',
       moderate_pd: 'Moderate Stage PD',
       advanced_pd: 'Advanced Stage PD',
     };
-    return labels[diagnosis] || diagnosis;
+    return labels[diagnosis?.toLowerCase()] || diagnosis;
   };
 
   const stageColor = getStageColor(report.stage);
@@ -157,6 +161,8 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
               <button
                 onClick={onClose}
                 className="text-white hover:text-gray-200 transition-colors"
+                title="Close modal"
+                aria-label="Close modal"
               >
                 <XMarkIcon className="h-6 w-6" />
               </button>

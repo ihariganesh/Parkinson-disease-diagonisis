@@ -1,6 +1,7 @@
 """
 Improved DaT Scan Model Training Script
 Fixes 0% specificity problem with aggressive class weighting and better regularization
+Uses gradient accumulation for GPU memory efficiency
 """
 
 import os
@@ -16,6 +17,16 @@ import matplotlib.pyplot as plt
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent))
 
+# Enable memory growth for GPU to avoid OOM
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        print(f"✅ GPU memory growth enabled for {len(gpus)} GPU(s)")
+    except RuntimeError as e:
+        print(f"⚠️ GPU configuration error: {e}")
+
 from dat_cnn_lstm_model import DaTCNNLSTMModel
 
 class ImprovedDaTModelTrainer:
@@ -26,10 +37,10 @@ class ImprovedDaTModelTrainer:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Model parameters
-        self.target_size = (128, 128)
-        self.max_slices = 16
-        self.batch_size = 4  # Small batch for small dataset
+        # Model parameters (preprocessed data is already (16, 128, 128, 1))
+        self.input_shape = (16, 128, 128, 1)
+        self.batch_size = 1  # Minimal batch for GPU
+        self.gradient_accumulation_steps = 4  # Accumulate gradients over 4 steps = effective batch of 4
         
         # Training data
         self.X_train = None
@@ -40,41 +51,33 @@ class ImprovedDaTModelTrainer:
         self.y_test = None
         
     def load_data(self):
-        """Load and split NTUA dataset"""
+        """Load preprocessed NTUA dataset"""
         print("\n" + "="*80)
-        print("LOADING NTUA DATASET")
+        print("LOADING NTUA PREPROCESSED DATASET")
         print("="*80)
         
-        # Load PD patients
-        pd_dir = self.data_dir / "PD Patients"
-        healthy_dir = self.data_dir / "Non PD Patients"
+        # Load preprocessed data
+        preprocessed_dir = Path("/home/hari/Downloads/parkinson/parkinson-app/ml_models/dat_preprocessed_ntua")
         
-        X_pd, y_pd = self._load_subjects(pd_dir, label=1)
-        X_healthy, y_healthy = self._load_subjects(healthy_dir, label=0)
+        print(f"📦 Loading from: {preprocessed_dir}")
+        self.X_train = np.load(preprocessed_dir / "train_X.npy")
+        self.y_train = np.load(preprocessed_dir / "train_y.npy")
+        self.X_val = np.load(preprocessed_dir / "val_X.npy")
+        self.y_val = np.load(preprocessed_dir / "val_y.npy")
+        self.X_test = np.load(preprocessed_dir / "test_X.npy")
+        self.y_test = np.load(preprocessed_dir / "test_y.npy")
         
         print(f"\n📊 Dataset Statistics:")
-        print(f"  • PD Patients: {len(y_pd)} subjects")
-        print(f"  • Healthy: {len(y_healthy)} subjects")
-        print(f"  • Total: {len(y_pd) + len(y_healthy)} subjects")
-        print(f"  • Class Ratio (PD:Healthy): {len(y_pd)/len(y_healthy):.2f}:1")
+        print(f"  • Train: {len(self.y_train)} subjects ({np.sum(self.y_train)} PD, {len(self.y_train) - np.sum(self.y_train)} Healthy)")
+        print(f"  • Val: {len(self.y_val)} subjects ({np.sum(self.y_val)} PD, {len(self.y_val) - np.sum(self.y_val)} Healthy)")
+        print(f"  • Test: {len(self.y_test)} subjects ({np.sum(self.y_test)} PD, {len(self.y_test) - np.sum(self.y_test)} Healthy)")
+        print(f"  • Total: {len(self.y_train) + len(self.y_val) + len(self.y_test)} subjects")
         
-        # Combine datasets
-        X = np.concatenate([X_pd, X_healthy], axis=0)
-        y = np.concatenate([y_pd, y_healthy], axis=0)
-        
-        # Stratified split: 70% train, 20% val, 10% test
-        X_train_val, self.X_test, y_train_val, self.y_test = train_test_split(
-            X, y, test_size=0.1, stratify=y, random_state=42
-        )
-        
-        self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(
-            X_train_val, y_train_val, test_size=0.22, stratify=y_train_val, random_state=42
-        )
-        
-        print(f"\n📁 Data Split:")
-        print(f"  • Train: {len(self.y_train)} ({np.sum(self.y_train)} PD, {len(self.y_train) - np.sum(self.y_train)} Healthy)")
-        print(f"  • Val: {len(self.y_val)} ({np.sum(self.y_val)} PD, {len(self.y_val) - np.sum(self.y_val)} Healthy)")
-        print(f"  • Test: {len(self.y_test)} ({np.sum(self.y_test)} PD, {len(self.y_test) - np.sum(self.y_test)} Healthy)")
+        # Calculate ratio
+        total_pd = np.sum(self.y_train) + np.sum(self.y_val) + np.sum(self.y_test)
+        total_healthy = len(self.y_train) + len(self.y_val) + len(self.y_test) - total_pd
+        if total_healthy > 0:
+            print(f"  • Class Ratio (PD:Healthy): {total_pd/total_healthy:.2f}:1")
         
     def _load_subjects(self, subject_dir: Path, label: int):
         """Load all subjects from directory"""
@@ -144,12 +147,12 @@ class ImprovedDaTModelTrainer:
         print("\n🏗️  Building Model with Enhanced Regularization...")
         
         model_builder = DaTCNNLSTMModel(
-            input_shape=(self.target_size[0], self.target_size[1], self.max_slices, 1),
+            input_shape=self.input_shape,
             num_classes=1
         )
         
         # Build model with high dropout
-        model = model_builder.build_standard()
+        model = model_builder.build_model()
         
         # Recompile with lower learning rate for stability
         model.compile(
@@ -322,9 +325,9 @@ class ImprovedDaTModelTrainer:
 
 def main():
     """Main training pipeline"""
-    # Configuration
-    DATA_DIR = "ntua-parkinson-dataset"
-    OUTPUT_DIR = "models/dat_scan"
+    # Configuration - use absolute paths
+    DATA_DIR = "/home/hari/Downloads/parkinson/ntua-parkinson-dataset"
+    OUTPUT_DIR = "/home/hari/Downloads/parkinson/parkinson-app/models/dat_scan"
     
     print("\n" + "="*80)
     print("IMPROVED DaT SCAN MODEL TRAINING")

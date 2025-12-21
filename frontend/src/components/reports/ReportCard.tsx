@@ -28,11 +28,15 @@ const ReportCard = ({ report, onView, onExport, onShare, onDelete }: ReportCardP
   const getDiagnosisLabel = (diagnosis: string) => {
     const labels: Record<string, string> = {
       healthy: 'Healthy',
-      early_pd: 'Early PD',
-      moderate_pd: 'Moderate PD',
-      advanced_pd: 'Advanced PD',
+      early_stage: 'Early Stage PD',
+      moderate_stage: 'Moderate Stage PD',
+      advanced_stage: 'Advanced Stage PD',
+      // Legacy support
+      early_pd: 'Early Stage PD',
+      moderate_pd: 'Moderate Stage PD',
+      advanced_pd: 'Advanced Stage PD',
     };
-    return labels[diagnosis] || diagnosis;
+    return labels[diagnosis?.toLowerCase()] || diagnosis;
   };
 
   const stageColor = getStageColor(report.stage);

@@ -151,11 +151,69 @@ async def get_patient_details(
         "reports": [
             {
                 "id": report.id,
-                "diagnosis": report.diagnosis,
-                "confidence_score": report.confidence_score,
-                "status": report.status,
-                "created_at": report.created_at,
-                "notes": report.notes
+                "final_diagnosis": report.final_diagnosis.value if hasattr(report.final_diagnosis, 'value') else str(report.final_diagnosis),
+                "confidence": report.confidence,
+                "stage": report.stage,
+                "fusion_score": report.fusion_score,
+                "doctor_verified": report.doctor_verified,
+                "doctor_notes": report.doctor_notes,
+                "created_at": report.created_at.isoformat() if report.created_at else None
+            }
+            for report in reports
+        ]
+    }
+
+@router.get("/search-patient/{patient_id}")
+async def search_patient_by_id(
+    patient_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Search for a patient by their patient_id (PID-XXXXXX format)"""
+    if current_user.role != UserRole.DOCTOR:
+        raise HTTPException(status_code=403, detail="Only doctors can access this endpoint")
+    
+    # Search by patient_id field (PID-XXXXXX)
+    patient = db.query(User).filter(
+        and_(User.patient_id == patient_id, User.role == UserRole.PATIENT)
+    ).first()
+    
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found. Please check the Patient ID.")
+    
+    # Get patient's diagnosis reports
+    reports = db.query(DiagnosisReport).filter(
+        DiagnosisReport.patient_id == patient.id
+    ).all()
+    
+    return {
+        "patient": {
+            "id": patient.id,
+            "patient_id": patient.patient_id,
+            "first_name": patient.first_name,
+            "last_name": patient.last_name,
+            "email": patient.email,
+            "date_of_birth": patient.date_of_birth,
+            "phone_number": patient.phone_number,
+            "address_street": patient.address_street,
+            "address_city": patient.address_city,
+            "address_state": patient.address_state,
+            "gender": patient.gender,
+            "created_at": patient.created_at,
+            "is_active": patient.is_active
+        },
+        "reports": [
+            {
+                "id": report.id,
+                "final_diagnosis": report.final_diagnosis.value if hasattr(report.final_diagnosis, 'value') else str(report.final_diagnosis),
+                "confidence": report.confidence,
+                "stage": report.stage,
+                "multimodal_analysis": report.multimodal_analysis,
+                "fusion_score": report.fusion_score,
+                "doctor_verified": report.doctor_verified,
+                "doctor_notes": report.doctor_notes,
+                "created_at": report.created_at.isoformat() if report.created_at else None,
+                "updated_at": report.updated_at.isoformat() if report.updated_at else None
             }
             for report in reports
         ]

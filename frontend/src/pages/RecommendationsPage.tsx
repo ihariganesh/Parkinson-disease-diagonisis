@@ -265,7 +265,7 @@ const RecommendationsPage = () => {
                   ⚠️ Generic Recommendations (AI Temporarily Unavailable)
                 </h3>
                 <p className="text-sm text-orange-800 mb-2">
-                  The Gemini AI service is currently unavailable (quota exceeded). You are seeing <strong>generic, template-based recommendations</strong> that do NOT consider your specific age, gender, or location.
+                  The AI service is currently unavailable. You are seeing <strong>generic, template-based recommendations</strong> that do NOT consider your specific age, gender, or location.
                 </p>
                 <p className="text-sm text-orange-800">
                   <strong>What this means:</strong> These are general health tips, not personalized AI guidance. For truly personalized recommendations, please try regenerating later when the AI service is restored.

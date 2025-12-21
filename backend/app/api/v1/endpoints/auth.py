@@ -5,6 +5,7 @@ from app.db.database import get_db
 from app.db.models import User, UserRole
 from app.core.security import verify_password, create_access_token, get_password_hash, decode_access_token
 from pydantic import BaseModel, EmailStr
+from typing import Optional
 import uuid
 from datetime import datetime
 
@@ -42,13 +43,35 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     role: str
+    patient_id: Optional[str] = None
     is_active: bool
     created_at: datetime
+    date_of_birth: Optional[datetime] = None
+    phone_number: Optional[str] = None
+    gender: Optional[str] = None
+    address_street: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_zip: Optional[str] = None
+    address_country: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+def generate_patient_id(db: Session) -> str:
+    """Generate a unique patient ID in format PID-XXXXXX"""
+    while True:
+        # Get the count of existing patient IDs to generate next number
+        count = db.query(User).filter(User.patient_id.isnot(None)).count()
+        new_number = count + 1
+        patient_id = f"PID-{new_number:06d}"  # PID-000001, PID-000002, etc.
+        
+        # Check if this ID already exists (in case of concurrent registrations)
+        existing = db.query(User).filter(User.patient_id == patient_id).first()
+        if not existing:
+            return patient_id
 
 @router.post("/register", response_model=dict)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
@@ -68,6 +91,9 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     # Convert role string to enum
     role_enum = UserRole.PATIENT if user_data.role.upper() == "PATIENT" else UserRole.DOCTOR
     
+    # Generate patient ID for patients only
+    patient_id = generate_patient_id(db) if role_enum == UserRole.PATIENT else None
+    
     # Parse date_of_birth if provided
     date_of_birth = None
     if user_data.date_of_birth:
@@ -83,6 +109,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         first_name=user_data.first_name,
         last_name=user_data.last_name,
         role=role_enum,
+        patient_id=patient_id,
         date_of_birth=date_of_birth,
         phone_number=user_data.phone_number,
         gender=user_data.gender,
@@ -103,11 +130,16 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     
-    return {
+    response_data = {
         "message": "User registered successfully",
         "user_id": db_user.id,
         "email": db_user.email
     }
+    
+    if db_user.patient_id:
+        response_data["patient_id"] = db_user.patient_id
+    
+    return response_data
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -178,8 +210,17 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
         first_name=current_user.first_name,
         last_name=current_user.last_name,
         role=current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role),
+        patient_id=current_user.patient_id,
         is_active=current_user.is_active,
-        created_at=current_user.created_at
+        created_at=current_user.created_at,
+        date_of_birth=current_user.date_of_birth,
+        phone_number=current_user.phone_number,
+        gender=current_user.gender,
+        address_street=current_user.address_street,
+        address_city=current_user.address_city,
+        address_state=current_user.address_state,
+        address_zip=current_user.address_zip,
+        address_country=current_user.address_country
     )
 
 @router.post("/logout")

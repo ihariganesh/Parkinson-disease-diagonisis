@@ -743,35 +743,65 @@ async def analyze_comprehensive(
                 from app.db.models import DiagnosisReport, DiagnosisStage
                 
                 # Map fusion diagnosis to DiagnosisStage enum
-                diagnosis_mapping = {
-                    'healthy': DiagnosisStage.HEALTHY,
-                    'parkinson': DiagnosisStage.EARLY_STAGE,
-                    'early_stage': DiagnosisStage.EARLY_STAGE,
-                    'moderate_stage': DiagnosisStage.MODERATE_STAGE,
-                    'advanced_stage': DiagnosisStage.ADVANCED_STAGE
-                }
-                
                 fusion_results = result.get('fusion_results', {})
                 final_diagnosis = fusion_results.get('final_diagnosis', 'healthy').lower()
                 confidence = fusion_results.get('final_probability', 0.0)
                 
-                # Determine stage (0-4 scale)
+                # Determine stage (0-4 scale) with improved string matching
                 stage = 0
-                if final_diagnosis == 'healthy':
+                final_diagnosis_lower = final_diagnosis.lower()
+                
+                logging.info(f"🔍 Processing diagnosis string: '{final_diagnosis}' (lowercase: '{final_diagnosis_lower}')")
+                logging.info(f"🔍 Confidence score: {confidence:.4f}")
+                
+                # Check for Healthy/Normal first (most explicit)
+                if 'healthy' in final_diagnosis_lower or 'normal' in final_diagnosis_lower or ('non' in final_diagnosis_lower and 'pd' in final_diagnosis_lower):
                     stage = 0
                     diagnosis_stage = DiagnosisStage.HEALTHY
-                elif final_diagnosis in ['parkinson', 'early_stage']:
+                    logging.info(f"✅ Diagnosis mapped: Healthy -> {diagnosis_stage.value} (Stage 0)")
+                
+                # Check for stage keywords (these indicate PD even without "parkinson" word)
+                elif 'early' in final_diagnosis_lower and 'stage' in final_diagnosis_lower:
                     stage = 1
                     diagnosis_stage = DiagnosisStage.EARLY_STAGE
-                elif final_diagnosis == 'moderate_stage':
+                    logging.info(f"✅ Diagnosis mapped: Early Stage PD -> {diagnosis_stage.value} (Stage {stage})")
+                
+                elif 'moderate' in final_diagnosis_lower and 'stage' in final_diagnosis_lower:
                     stage = 2
                     diagnosis_stage = DiagnosisStage.MODERATE_STAGE
-                elif final_diagnosis == 'advanced_stage':
+                    logging.info(f"✅ Diagnosis mapped: Moderate Stage PD -> {diagnosis_stage.value} (Stage {stage})")
+                
+                elif ('advanced' in final_diagnosis_lower or 'severe' in final_diagnosis_lower) and 'stage' in final_diagnosis_lower:
                     stage = 3
                     diagnosis_stage = DiagnosisStage.ADVANCED_STAGE
+                    logging.info(f"✅ Diagnosis mapped: Advanced Stage PD -> {diagnosis_stage.value} (Stage {stage})")
+                
+                # Check for Parkinson's mentions (handles "parkinson's disease", "parkinson", "PD")
+                elif 'parkinson' in final_diagnosis_lower or 'pd' in final_diagnosis_lower:
+                    # Default to early stage for general Parkinson's diagnosis
+                    stage = 1
+                    diagnosis_stage = DiagnosisStage.EARLY_STAGE
+                    
+                    # Check for specific stage modifiers
+                    if 'moderate' in final_diagnosis_lower:
+                        stage = 2
+                        diagnosis_stage = DiagnosisStage.MODERATE_STAGE
+                    elif 'advanced' in final_diagnosis_lower or 'severe' in final_diagnosis_lower:
+                        stage = 3
+                        diagnosis_stage = DiagnosisStage.ADVANCED_STAGE
+                    
+                    logging.info(f"✅ Diagnosis mapped: Parkinson's Disease -> {diagnosis_stage.value} (Stage {stage})")
+                
+                # Fallback: use confidence score to decide
                 else:
-                    stage = 0
-                    diagnosis_stage = DiagnosisStage.HEALTHY
+                    if confidence > 0.6:
+                        stage = 1
+                        diagnosis_stage = DiagnosisStage.EARLY_STAGE
+                        logging.warning(f"⚠️  Unrecognized diagnosis '{final_diagnosis}' -> defaulting to EARLY_STAGE (confidence={confidence:.2f} > 0.6)")
+                    else:
+                        stage = 0
+                        diagnosis_stage = DiagnosisStage.HEALTHY
+                        logging.warning(f"⚠️  Unrecognized diagnosis '{final_diagnosis}' -> defaulting to HEALTHY (confidence={confidence:.2f} <= 0.6)")
                 
                 # Prepare multimodal analysis data
                 multimodal_analysis = {
@@ -797,15 +827,27 @@ async def analyze_comprehensive(
                     doctor_verified=False
                 )
                 
+                logging.info(f"💾 Saving diagnosis report:")
+                logging.info(f"   - final_diagnosis: {diagnosis_stage.value}")
+                logging.info(f"   - stage: {stage}")
+                logging.info(f"   - confidence: {confidence:.4f}")
+                logging.info(f"   - fusion_score: {fusion_results.get('agreement_score', 0.0):.4f}")
+                
                 db.add(diagnosis_report)
                 db.commit()
                 db.refresh(diagnosis_report)
                 
+                logging.info(f"✅ Report saved successfully with ID: {diagnosis_report.id}")
+                
                 # Add report ID to result
                 result['report_id'] = diagnosis_report.id
                 result['saved_to_database'] = True
+                result['saved_diagnosis'] = diagnosis_stage.value  # Add for verification
                 
                 logging.info(f"✓ Saved diagnosis report {diagnosis_report.id} for user {current_user.id}")
+                logging.info(f"  - Final diagnosis from fusion: '{final_diagnosis}'")
+                logging.info(f"  - Saved as: {diagnosis_stage.value} (Stage {stage})")
+                logging.info(f"  - Confidence: {confidence:.2%}")
                 
             except Exception as save_error:
                 logging.error(f"Failed to save diagnosis report: {str(save_error)}")

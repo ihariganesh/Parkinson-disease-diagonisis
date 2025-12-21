@@ -22,8 +22,10 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str = ""
     
-    # Google Gemini
-    GEMINI_API_KEY: str = ""
+    # AI Services for Lifestyle Recommendations
+    GROQ_API_KEY: str = ""  # Groq API for fast AI inference
+    GEMINI_API_KEY: str = ""  # Google Gemini API (backup)
+    ENABLE_GEMINI: bool = False  # Enable Gemini as backup provider
     
     # Environment
     ENVIRONMENT: str = "development"
@@ -43,10 +45,12 @@ class Settings(BaseSettings):
     # ML Models
     MODEL_PATH: str = "./models"
     ENABLE_GPU: bool = False
+    AUDIO_FAST_MODE: bool = True  # Use fast audio feature extraction
 
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "allow"  # Allow extra fields in .env
 
 
 settings = Settings()

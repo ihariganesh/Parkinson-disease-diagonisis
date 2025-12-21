@@ -40,6 +40,7 @@ async def get_profile(
             "first_name": current_user.first_name,
             "last_name": current_user.last_name,
             "role": current_user.role.value,
+            "patient_id": current_user.patient_id,
             "date_of_birth": current_user.date_of_birth.isoformat() if current_user.date_of_birth else None,
             "phone_number": current_user.phone_number,
             "address_street": current_user.address_street if hasattr(current_user, 'address_street') else None,

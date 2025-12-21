@@ -15,31 +15,66 @@ class GeminiLifestyleService:
     
     def __init__(self, api_key: Optional[str] = None):
         """
-        Initialize Gemini AI service
+        Initialize Gemini AI service with API key rotation support
         
         Args:
             api_key: Google Gemini API key (defaults to env variable)
         """
-        self.api_key = api_key or os.getenv('GEMINI_API_KEY')
-        if not self.api_key:
+        # Support multiple API keys separated by comma
+        api_keys_str = api_key or os.getenv('GEMINI_API_KEY', '')
+        self.api_keys = [k.strip() for k in api_keys_str.split(',') if k.strip()]
+        self.current_key_index = 0
+        
+        if not self.api_keys:
             print("❌ GEMINI_API_KEY not found in environment variables")
+            print("💡 Set GEMINI_API_KEY in .env file or pass as parameter")
+            self.model = None
+            self.api_available = False
+            return
+        
+        print(f"🔑 Found {len(self.api_keys)} API key(s)")
+        self.api_available = True
+        self._initialize_model()
+    
+    def _initialize_model(self):
+        """Initialize or reinitialize the Gemini model with current API key"""
+        if not self.api_keys:
             self.model = None
             return
         
+        self.api_key = self.api_keys[self.current_key_index]
         genai.configure(api_key=self.api_key)
-        print(f"🔑 Using Gemini API key: {self.api_key[:20]}...")
-        # Use gemini-2.0-flash-exp which is available in the free tier
-        try:
-            self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
-            print("✅ Gemini AI service initialized with gemini-2.0-flash-exp")
-        except Exception as e:
-            print(f"⚠️ Failed to load gemini-2.0-flash-exp, trying gemini-pro: {e}")
+        print(f"🔑 Using Gemini API key #{self.current_key_index + 1}: {self.api_key[:20]}...***")
+        
+        # Try multiple model versions
+        model_options = [
+            'gemini-2.0-flash-exp',
+            'gemini-1.5-flash',
+            'gemini-1.5-flash-latest',
+            'gemini-pro'
+        ]
+        
+        for model_name in model_options:
             try:
-                self.model = genai.GenerativeModel('models/gemini-pro')
-                print("✅ Gemini AI service initialized with gemini-pro")
-            except Exception as e2:
-                print(f"❌ Failed to initialize any Gemini model: {e2}")
-                self.model = None
+                self.model = genai.GenerativeModel(model_name)
+                print(f"✅ Gemini AI initialized with {model_name}")
+                return
+            except Exception as e:
+                print(f"⚠️ Failed to load {model_name}: {str(e)[:100]}")
+                continue
+        
+        print("❌ Failed to initialize any Gemini model")
+        self.model = None
+    
+    def _rotate_api_key(self) -> bool:
+        """Rotate to next API key. Returns True if rotation successful, False if no more keys"""
+        if len(self.api_keys) <= 1:
+            return False
+        
+        self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
+        print(f"🔄 Rotating to API key #{self.current_key_index + 1}")
+        self._initialize_model()
+        return True
     
     async def generate_recommendations(
         self,
@@ -72,22 +107,61 @@ class GeminiLifestyleService:
         Returns:
             Dictionary containing categorized recommendations
         """
-        try:
-            if self.model is None:
-                print("❌ Gemini model not initialized")
+        max_retries = len(self.api_keys) if self.api_keys else 1
+        attempt = 0
+        
+        while attempt < max_retries:
+            try:
+                if self.model is None:
+                    print("❌ Gemini model not initialized")
+                    return self._get_fallback_recommendations(diagnosis, age)
+                
+                # Build comprehensive prompt with demographics
+                prompt = self._build_prompt(
+                    diagnosis, pd_probability, confidence, age, gender, 
+                    location, severity, stage, symptoms, medical_history
+                )
+                
+                # Generate content with timeout and safety settings
+                response = self.model.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.7,
+                        top_p=0.8,
+                        top_k=40,
+                        max_output_tokens=2048,
+                    )
+                )
+                
+                # Parse and structure response
+                recommendations = self._parse_recommendations(response.text)
+                
+                # Success - break retry loop
+                break
+                
+            except Exception as e:
+                error_str = str(e).lower()
+                print(f"❌ Gemini API error (attempt {attempt + 1}/{max_retries}): {str(e)[:200]}")
+                
+                # Check if it's a quota/rate limit error
+                is_quota_error = any(keyword in error_str for keyword in [
+                    'quota', 'rate limit', '429', 'resource exhausted', 
+                    'too many requests', 'quota exceeded'
+                ])
+                
+                if is_quota_error and attempt < max_retries - 1:
+                    # Try rotating to next API key
+                    if self._rotate_api_key():
+                        print("🔄 Retrying with next API key...")
+                        attempt += 1
+                        continue
+                
+                # If not quota error or no more keys, use fallback
+                print(f"⚠️ Using fallback recommendations due to: {str(e)[:100]}")
                 return self._get_fallback_recommendations(diagnosis, age)
-            
-            # Build comprehensive prompt with demographics
-            prompt = self._build_prompt(
-                diagnosis, pd_probability, confidence, age, gender, 
-                location, severity, stage, symptoms, medical_history
-            )
-            
-            # Generate content
-            response = self.model.generate_content(prompt)
-            
-            # Parse and structure response
-            recommendations = self._parse_recommendations(response.text)
+        
+        try:
+            # This block runs if we successfully generated recommendations
             
             # Add metadata
             recommendations['metadata'] = {
@@ -105,7 +179,7 @@ class GeminiLifestyleService:
             return recommendations
             
         except Exception as e:
-            print(f"Error generating recommendations: {e}")
+            print(f"❌ Final error generating recommendations: {e}")
             return self._get_fallback_recommendations(diagnosis, age)
     
     def _build_prompt(
