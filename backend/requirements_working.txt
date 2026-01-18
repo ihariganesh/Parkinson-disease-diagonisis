@@ -4,10 +4,10 @@
 # ===== WEB FRAMEWORK =====
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-python-multipart==0.0.12
+python-multipart==0.0.20
 
 # ===== AUTHENTICATION & SECURITY =====
-python-jose[cryptography]==3.4.0
+python-jose[cryptography]==3.4.1
 passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 
@@ -20,7 +20,7 @@ email-validator      # Required for pydantic email validation
 
 # ===== HTTP CLIENT & FILE HANDLING =====
 httpx==0.25.2
-requests==2.32.0
+requests==2.32.3
 aiofiles==23.2.1
 
 # ===== DATA PROCESSING (Python 3.13 compatible) =====
