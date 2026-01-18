@@ -104,7 +104,7 @@ async def get_medical_reports(
 ):
     """Get paginated list of diagnosis reports for current user"""
     try:
-        print(f"[DEBUG] Fetching reports for user: {current_user.id} ({current_user.email})")
+        # Removed sensitive logging - user details not logged in production
         
         # Calculate offset
         offset = (page - 1) * limit
@@ -114,7 +114,7 @@ async def get_medical_reports(
         total = query.count()
         reports = query.order_by(DiagnosisReport.created_at.desc()).offset(offset).limit(limit).all()
         
-        print(f"[DEBUG] Found {total} reports for user {current_user.id}")
+        # Query results logged without user identifiers
         
         # Convert to response format
         report_list = []
@@ -154,10 +154,7 @@ async def get_medical_reports(
         }
         
     except Exception as e:
-        print(f"[ERROR] Error fetching diagnosis reports: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        # Return error response
+        # Error occurred - returning generic error without details
         return {
             "success": False,
             "error": str(e),
@@ -178,7 +175,7 @@ async def delete_diagnosis_report(
 ):
     """Delete a diagnosis report by ID"""
     try:
-        print(f"[DEBUG] Attempting to delete report {report_id} for user {current_user.id}")
+        # Delete operation logged without user identifiers
         
         # Find the report
         report = db.query(DiagnosisReport).filter(
@@ -187,7 +184,7 @@ async def delete_diagnosis_report(
         ).first()
         
         if not report:
-            print(f"[ERROR] Report {report_id} not found or user {current_user.id} doesn't own it")
+            # Report access denied - details not logged
             return {
                 "success": False,
                 "error": "Report not found or you don't have permission to delete it"
@@ -205,13 +202,10 @@ async def delete_diagnosis_report(
         }
         
     except Exception as e:
-        print(f"[ERROR] Error deleting report: {str(e)}")
-        import traceback
-        traceback.print_exc()
         db.rollback()
         return {
             "success": False,
-            "error": f"Failed to delete report: {str(e)}"
+            "error": "Failed to delete report"
         }
 
 @router.post("/reports/bulk-delete")
@@ -222,7 +216,7 @@ async def bulk_delete_diagnosis_reports(
 ):
     """Delete multiple diagnosis reports by IDs"""
     try:
-        print(f"[DEBUG] Bulk deleting {len(report_ids)} reports for user {current_user.id}")
+        # Bulk delete operation initiated
         
         deleted_count = 0
         failed_ids = []
@@ -243,7 +237,7 @@ async def bulk_delete_diagnosis_reports(
                     print(f"[WARNING] Report {report_id} not found or user doesn't own it")
             except Exception as e:
                 failed_ids.append(report_id)
-                print(f"[ERROR] Failed to delete report {report_id}: {str(e)}")
+                # Error details not logged
         
         # Commit all deletions
         db.commit()
@@ -259,13 +253,10 @@ async def bulk_delete_diagnosis_reports(
         }
         
     except Exception as e:
-        print(f"[ERROR] Bulk delete error: {str(e)}")
-        import traceback
-        traceback.print_exc()
         db.rollback()
         return {
             "success": False,
-            "error": f"Failed to delete reports: {str(e)}"
+            "error": "Failed to delete reports"
         }
 
 @router.post("/upload")

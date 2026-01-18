@@ -225,10 +225,7 @@ class MultiModalAnalysisService:
             'weights_applied': {m: self.weights[m] for m in available_modalities}
         }
         
-        print(f"\n   Final Diagnosis: {final_diagnosis}")
-        print(f"   Probability: {final_probability*100:.1f}%")
-        print(f"   Confidence: {confidence_level} ({final_confidence*100:.1f}%)")
-        print(f"   Agreement: {agreement_score*100:.1f}%")
+        # Diagnosis results not logged to prevent information exposure
         
         # 5. Generate Clinical Interpretation
         results['clinical_interpretation'] = self._generate_interpretation(

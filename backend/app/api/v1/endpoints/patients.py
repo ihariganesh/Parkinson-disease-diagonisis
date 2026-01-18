@@ -54,12 +54,10 @@ async def get_profile(
             "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
         }
     except Exception as e:
-        print(f"Error fetching profile: {e}")
-        import traceback
-        traceback.print_exc()
+        # Error occurred fetching profile
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch profile: {str(e)}"
+            detail="Failed to fetch profile"
         )
 
 
@@ -71,7 +69,7 @@ async def update_profile(
 ):
     """Update current user's profile"""
     try:
-        print(f"Updating profile for user: {current_user.email}")
+        # Profile update initiated
         print(f"Profile data: {profile_data.dict()}")
         
         # Update fields if provided
@@ -110,7 +108,7 @@ async def update_profile(
         db.commit()
         db.refresh(current_user)
         
-        print(f"✅ Profile updated successfully for {current_user.email}")
+        # Profile updated successfully
         
         return {
             "success": True,
@@ -119,11 +117,10 @@ async def update_profile(
         
     except Exception as e:
         db.rollback()
-        print(f"❌ Error updating profile: {e}")
-        traceback.print_exc()
+        # Error updating profile
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update profile: {str(e)}"
+            detail="Failed to update profile"
         )
 
 

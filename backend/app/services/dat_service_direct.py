@@ -73,9 +73,7 @@ class DaTScanAnalysisServiceDirect:
             
             print(f"✅ Model loaded successfully!")
         except Exception as e:
-            print(f"❌ Error loading model: {e}")
-            import traceback
-            traceback.print_exc()
+            # Model loading failed - details not logged
             self.model = None
     
     def is_available(self) -> bool:
@@ -260,11 +258,9 @@ class DaTScanAnalysisServiceDirect:
             return result
             
         except Exception as e:
-            import traceback
             return {
                 'success': False,
-                'error': str(e),
-                'traceback': traceback.format_exc(),
+                'error': 'Analysis failed',
                 'timestamp': datetime.now().isoformat()
             }
     
