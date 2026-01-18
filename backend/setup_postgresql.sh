@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 DB_NAME="parkinson_db"
 TEST_DB_NAME="parkinson_test_db"
 DB_USER="parkinson_user"
-DB_PASSWORD="parkinson123"
+DB_PASSWORD="<your_db_password>"
 
 echo -e "${BLUE}Database Configuration:${NC}"
 echo -e "  Main Database: ${YELLOW}$DB_NAME${NC}"

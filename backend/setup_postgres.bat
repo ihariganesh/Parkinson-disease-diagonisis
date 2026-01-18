@@ -16,7 +16,7 @@ echo.
 
 %PGBIN%\psql.exe -U postgres -h localhost -c "CREATE DATABASE parkinson_db;"
 %PGBIN%\psql.exe -U postgres -h localhost -c "CREATE DATABASE parkinson_test_db;"
-%PGBIN%\psql.exe -U postgres -h localhost -c "CREATE USER parkinson_user WITH PASSWORD 'parkinson123';"
+%PGBIN%\psql.exe -U postgres -h localhost -c "CREATE USER parkinson_user WITH PASSWORD '<your_db_password>';"
 %PGBIN%\psql.exe -U postgres -h localhost -c "GRANT ALL PRIVILEGES ON DATABASE parkinson_db TO parkinson_user;"
 %PGBIN%\psql.exe -U postgres -h localhost -c "GRANT ALL PRIVILEGES ON DATABASE parkinson_test_db TO parkinson_user;"
 
@@ -29,5 +29,5 @@ echo.
 echo PostgreSQL setup completed!
 echo Database: parkinson_db
 echo User: parkinson_user
-echo Password: parkinson123
+echo Password: <your_db_password>
 pause

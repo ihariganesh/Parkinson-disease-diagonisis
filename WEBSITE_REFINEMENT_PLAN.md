@@ -63,8 +63,8 @@ import google.generativeai as genai
 from typing import Dict, Any
 
 class GeminiLifestyleService:
-    def __init__(self):
-        genai.configure(api_key="AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM")
+   def __init__(self):
+      genai.configure(api_key="your-google-api-key-here")
         self.model = genai.GenerativeModel('gemini-pro')
     
     async def generate_recommendations(
@@ -337,7 +337,7 @@ CREATE TABLE lifestyle_recommendations (
 3. **Environment Variables**
    ```bash
    # Add to .env
-   GEMINI_API_KEY=AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM
+   GEMINI_API_KEY=your-google-api-key-here
    ```
 
 4. **Frontend Build**

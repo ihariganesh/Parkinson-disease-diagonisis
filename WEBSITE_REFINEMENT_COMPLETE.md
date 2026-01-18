@@ -46,7 +46,7 @@ All website refinement tasks have been successfully completed! The Parkinson's C
 **gemini_service.py** (408 lines) - NEW FILE
 - ✅ `GeminiLifestyleService` class created
 - ✅ Integration with Google Gemini Pro API
-- ✅ API Key: `AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM`
+- ✅ API Key: `your-google-api-key-here`
 - ✅ 7 Recommendation Categories:
   1. Exercise & Physical Activity
   2. Nutrition & Diet
@@ -157,7 +157,7 @@ alembic upgrade head
 
 Add to `backend/.env`:
 ```env
-GOOGLE_API_KEY=AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM
+GOOGLE_API_KEY=your-google-api-key-here
 ```
 
 ### 4. Restart Backend Server

@@ -7,8 +7,8 @@ The ParkinsonCare platform uses **PostgreSQL** as its primary and only database 
 ## Database Configuration
 
 - **Database System**: PostgreSQL 17.5+
-- **Connection**: `postgresql://parkinson_user:parkinson123@localhost:5432/parkinson_db`
-- **Test Database**: `postgresql://parkinson_user:parkinson123@localhost:5432/parkinson_test_db`
+- **Connection**: `postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_db`
+- **Test Database**: `postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_test_db`
 - **ORM**: SQLAlchemy 2.0+
 
 ## Database Setup
@@ -262,10 +262,10 @@ engine = create_engine(
 
 ```bash
 # Primary database
-DATABASE_URL=postgresql://parkinson_user:parkinson123@localhost:5432/parkinson_db
+DATABASE_URL=postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_db
 
 # Test database
-DATABASE_TEST_URL=postgresql://parkinson_user:parkinson123@localhost:5432/parkinson_test_db
+DATABASE_TEST_URL=postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_test_db
 ```
 
 ## Migration Commands

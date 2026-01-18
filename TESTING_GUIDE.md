@@ -31,7 +31,7 @@ pip list | grep google-generativeai
 # Should show: google-generativeai 0.8.5
 
 # Set API key (if not in .env)
-export GOOGLE_API_KEY=AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM
+export GOOGLE_API_KEY=your-google-api-key-here
 
 # Start server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -259,7 +259,7 @@ source ml_env/bin/activate
 python3 << 'EOF'
 import asyncio
 import os
-os.environ['GOOGLE_API_KEY'] = 'AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM'
+os.environ['GOOGLE_API_KEY'] = 'your-google-api-key-here'
 
 from app.services.gemini_service import get_gemini_service
 
@@ -464,7 +464,7 @@ cd backend
 source ml_env/bin/activate
 python3 -c "
 import os
-os.environ['GOOGLE_API_KEY'] = 'AIzaSyDA4lY5XN0QnX-sp_IBG5ZaXreIZGnd-rM'
+os.environ['GOOGLE_API_KEY'] = 'your-google-api-key-here'
 import google.generativeai as genai
 genai.configure(api_key=os.environ['GOOGLE_API_KEY'])
 model = genai.GenerativeModel('gemini-pro')

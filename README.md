@@ -340,6 +340,14 @@ Comprehensive multi-modal analysis combining all three modalities.
 
 ---
 
+## 🤝 Contributing
+
+We welcome contributions from developers, researchers, and healthcare professionals.
+
+- See `CONTRIBUTING.md` for setup, branching, and testing guidelines.
+- Use the issue templates for bug reports and feature requests.
+- Follow `CODE_OF_CONDUCT.md` and review `SECURITY.md` for reporting vulnerabilities.
+
 ## ⚙️ Configuration
 
 ### Environment Variables

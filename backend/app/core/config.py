@@ -5,8 +5,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql://parkinson_user:parkinson123@localhost:5432/parkinson_db"
-    DATABASE_TEST_URL: str = "postgresql://parkinson_user:parkinson123@localhost:5432/parkinson_test_db"
+    DATABASE_URL: str = "postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_db"
+    DATABASE_TEST_URL: str = "postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_test_db"
     
     # Security
     SECRET_KEY: str = "your-secret-key-here"

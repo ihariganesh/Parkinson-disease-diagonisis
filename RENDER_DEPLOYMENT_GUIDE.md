@@ -109,7 +109,7 @@ Scroll down to **"Environment Variables"** section and add these:
 | Key | Value | Notes |
 |-----|-------|-------|
 | `DATABASE_URL` | Paste your PostgreSQL Internal URL from Step 2 | ⚠️ CRITICAL! |
-| `SECRET_KEY` | `_E_LtGF8CxjkDqxZ4f20Ifhh0aPIGmTHCzd-7rXSw-U` | Use the one I generated |
+| `SECRET_KEY` | `<generate-a-strong-secret-key-here>` | Generate your own secure value |
 | `GEMINI_API_KEY` | Your new Gemini API key | Get from https://aistudio.google.com/app/apikey |
 | `ALGORITHM` | `HS256` | JWT algorithm |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Token expiry |
@@ -424,7 +424,7 @@ Use **UptimeRobot** (free):
 ### **Your Environment Variables (Copy-Paste Ready):**
 ```bash
 DATABASE_URL=<paste-from-render-postgresql>
-SECRET_KEY=_E_LtGF8CxjkDqxZ4f20Ifhh0aPIGmTHCzd-7rXSw-U
+SECRET_KEY=<generate-a-strong-secret-key-here>
 GEMINI_API_KEY=<your-gemini-key>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30

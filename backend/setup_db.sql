@@ -5,7 +5,7 @@ CREATE DATABASE parkinson_db;
 CREATE DATABASE parkinson_test_db;
 
 # Create user (replace 'your_password' with a secure password)
-CREATE USER parkinson_user WITH PASSWORD 'parkinson123';
+CREATE USER parkinson_user WITH PASSWORD '<your_db_password>'; 
 
 # Grant privileges
 GRANT ALL PRIVILEGES ON DATABASE parkinson_db TO parkinson_user;

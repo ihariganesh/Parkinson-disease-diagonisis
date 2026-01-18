@@ -10,7 +10,7 @@ The ParkinsonCare project has been successfully migrated from SQLite to PostgreS
 
 #### 1. Database Configuration
 - **Before**: SQLite (`sqlite:///./parkinson_app.db`)
-- **After**: PostgreSQL (`postgresql://parkinson_user:parkinson123@localhost:5432/parkinson_db`)
+- **After**: PostgreSQL (`postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_db`)
 
 #### 2. Environment Configuration
 - ✅ Updated `.env` file to use PostgreSQL connection string
@@ -88,10 +88,10 @@ $ curl -X GET "http://localhost:8001/api/v1/health"
 ### Environment Variables
 ```bash
 # Primary database (UPDATED)
-DATABASE_URL=postgresql://parkinson_user:parkinson123@localhost:5432/parkinson_db
+DATABASE_URL=postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_db
 
 # Test database (MAINTAINED)
-DATABASE_TEST_URL=postgresql://parkinson_user:parkinson123@localhost:5432/parkinson_test_db
+DATABASE_TEST_URL=postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_test_db
 ```
 
 ### Connection Pool Settings

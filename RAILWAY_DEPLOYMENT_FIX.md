@@ -97,7 +97,7 @@ Click **"Variables"** tab and add these:
 
 ```bash
 # Security (REQUIRED - use your generated key)
-SECRET_KEY=_E_LtGF8CxjkDqxZ4f20Ifhh0aPIGmTHCzd-7rXSw-U
+SECRET_KEY=<generate-a-strong-secret-key-here>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
