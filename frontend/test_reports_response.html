@@ -20,33 +20,48 @@
     <pre id="output">Click "Test /medical/reports Endpoint" button...</pre>
     
     <script>
-        function checkLocalStorage() {
+        function setOutput(text) {
             const output = document.getElementById('output');
+            output.textContent = text;
+        }
+
+        function appendLine(text, className) {
+            const output = document.getElementById('output');
+            const span = document.createElement('span');
+            if (className) {
+                span.className = className;
+            }
+            span.textContent = text;
+            output.appendChild(span);
+            output.appendChild(document.createTextNode('\n'));
+        }
+
+        function checkLocalStorage() {
             const token = localStorage.getItem('auth_token');
             const user = localStorage.getItem('user');
             
-            output.innerHTML = 'LocalStorage Check:\n\n';
-            output.innerHTML += 'auth_token: ' + (token ? 'EXISTS (length: ' + token.length + ')' : 'NOT FOUND') + '\n';
-            output.innerHTML += 'user: ' + (user ? JSON.stringify(JSON.parse(user), null, 2) : 'NOT FOUND') + '\n';
+            setOutput('LocalStorage Check:\n');
+            appendLine('auth_token: ' + (token ? 'EXISTS (length: ' + token.length + ')' : 'NOT FOUND'));
+            appendLine('user: ' + (user ? 'EXISTS' : 'NOT FOUND'));
         }
         
         async function testAPI() {
-            const output = document.getElementById('output');
             const token = localStorage.getItem('auth_token');
             
-            output.innerHTML = 'Testing API...\n\n';
+            setOutput('Testing API...\n');
             
             if (!token) {
-                output.innerHTML += '<span class="error">ERROR: No auth_token in localStorage!</span>\n';
-                output.innerHTML += 'Please open http://localhost:5174 first and log in.\n';
+                appendLine('ERROR: No auth_token in localStorage!', 'error');
+                appendLine('Please open http://localhost:5174 first and log in.');
                 return;
             }
             
-            output.innerHTML += 'Token found: ' + token.substring(0, 50) + '...\n\n';
+            appendLine('Token found (length: ' + token.length + ')');
+            appendLine('');
             
             try {
                 // Test 1: Call the endpoint
-                output.innerHTML += '=== Test 1: GET /api/v1/medical/reports ===\n';
+                appendLine('=== Test 1: GET /api/v1/medical/reports ===');
                 const response = await fetch('http://localhost:8000/api/v1/medical/reports?page=1&limit=50', {
                     headers: {
                         'Authorization': 'Bearer ' + token,
@@ -54,34 +69,38 @@
                     }
                 });
                 
-                output.innerHTML += 'Status: ' + response.status + ' ' + response.statusText + '\n';
-                output.innerHTML += 'Headers: ' + JSON.stringify([...response.headers.entries()], null, 2) + '\n\n';
+                appendLine('Status: ' + response.status + ' ' + response.statusText);
+                appendLine('Headers: ' + JSON.stringify([...response.headers.entries()], null, 2));
+                appendLine('');
                 
                 const data = await response.json();
-                output.innerHTML += 'Response Body:\n';
-                output.innerHTML += JSON.stringify(data, null, 2) + '\n\n';
+                appendLine('Response Body:');
+                appendLine(JSON.stringify(data, null, 2));
+                appendLine('');
                 
                 // Test 2: Check response structure
-                output.innerHTML += '\n=== Test 2: Response Structure Check ===\n';
+                appendLine('');
+                appendLine('=== Test 2: Response Structure Check ===');
                 if (data.items) {
-                    output.innerHTML += '<span class="success">✓ Has "items" property</span>\n';
-                    output.innerHTML += 'Total items: ' + data.items.length + '\n';
-                    output.innerHTML += 'Total count: ' + data.total + '\n';
+                    appendLine('✓ Has "items" property', 'success');
+                    appendLine('Total items: ' + data.items.length);
+                    appendLine('Total count: ' + data.total);
                     
                     if (data.items.length > 0) {
-                        output.innerHTML += '\nFirst item structure:\n';
-                        output.innerHTML += JSON.stringify(data.items[0], null, 2) + '\n';
+                        appendLine('');
+                        appendLine('First item structure:');
+                        appendLine(JSON.stringify(data.items[0], null, 2));
                     }
                 } else if (data.data) {
-                    output.innerHTML += '<span class="error">✗ Has "data" instead of "items"</span>\n';
-                    output.innerHTML += 'This is the problem! Frontend expects "items" but backend returns "data"\n';
+                    appendLine('✗ Has "data" instead of "items"', 'error');
+                    appendLine('This is the problem! Frontend expects "items" but backend returns "data"');
                 } else {
-                    output.innerHTML += '<span class="error">✗ Unknown response structure</span>\n';
+                    appendLine('✗ Unknown response structure', 'error');
                 }
                 
             } catch (err) {
-                output.innerHTML += '<span class="error">ERROR: ' + err.message + '</span>\n';
-                output.innerHTML += err.stack;
+                appendLine('ERROR while calling API. See console for details.', 'error');
+                console.error(err);
             }
         }
     </script>
