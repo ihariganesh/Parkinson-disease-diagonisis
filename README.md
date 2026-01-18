@@ -4,6 +4,8 @@
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![React 18+](https://img.shields.io/badge/react-18+-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![CI](https://github.com/ihariganesh/Parkinson-disease-diagonisis/actions/workflows/ci.yml/badge.svg)](https://github.com/ihariganesh/Parkinson-disease-diagonisis/actions/workflows/ci.yml)
+[![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](#-contributing)
 
 A comprehensive AI-powered clinical decision support system for Parkinson's disease diagnosis using multi-modal analysis combining DaT scans, handwriting patterns, and voice biomarkers.
 

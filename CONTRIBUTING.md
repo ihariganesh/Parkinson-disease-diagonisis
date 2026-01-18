@@ -58,6 +58,13 @@ cd frontend
 npm install
 ```
 
+### Environment Variables & Secrets
+
+- Never hard-code real API keys, database URLs with passwords, or `SECRET_KEY` values in code or docs.
+- Use environment variables and local `.env` files (which are not committed) for secrets.
+- Examples in this repo use placeholders like `your-google-api-key-here`, `<your_db_password>`, or `<generate-a-strong-secret-key-here>` – replace them locally with your own values.
+- If you ever accidentally commit a real secret, **revoke/rotate it immediately** in the provider dashboard and notify the maintainer following `SECURITY.md`.
+
 #### 4. Make Your Changes
 
 - Write clean, readable code
