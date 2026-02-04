@@ -7,6 +7,16 @@
 [![CI](https://github.com/ihariganesh/Parkinson-disease-diagonisis/actions/workflows/ci.yml/badge.svg)](https://github.com/ihariganesh/Parkinson-disease-diagonisis/actions/workflows/ci.yml)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](#-contributing)
 
+## 📄 Abstract
+
+Parkinson's disease (PD) is a progressive neurodegenerative disorder affecting millions worldwide, with early diagnosis being critical for effective treatment and management. This project presents a comprehensive AI-powered clinical decision support system that leverages multi-modal machine learning analysis to assist in the early detection and diagnosis of Parkinson's disease. By combining three complementary diagnostic modalities—**DaT (Dopamine Transporter) brain scans** (50% weight), **handwriting pattern analysis** (25% weight), and **voice biomarker analysis** (25% weight)—the system provides a holistic assessment that mirrors real-world clinical evaluation practices.
+
+The platform utilizes state-of-the-art deep learning architectures, including custom CNN+LSTM networks for sequential DaT scan analysis, convolutional neural networks for handwriting motor symptom detection, and MFCC-based speech pattern recognition models. These individual modalities are intelligently fused through a weighted ensemble approach that accounts for the reliability and clinical significance of each diagnostic signal. The system generates confidence-aware predictions (High/Moderate/Low) with detailed clinical interpretations, helping healthcare professionals make more informed decisions.
+
+Built with a modern technology stack (FastAPI backend, React frontend, TensorFlow/Keras ML models), the application features a user-friendly web interface for both patients and clinicians, real-time analysis capabilities, comprehensive reporting, and personalized recommendations. The system is designed with clinical validation and regulatory compliance in mind, incorporating proper medical disclaimers and emphasizing its role as a supplementary screening tool rather than a replacement for professional neurological examination.
+
+While currently trained on the NTUA Parkinson Dataset (66 subjects), the platform is architected for scalability and designed to accommodate larger, more diverse datasets. This research prototype demonstrates the potential of multi-modal AI systems in supporting early Parkinson's disease detection, with the ultimate goal of improving patient outcomes through earlier intervention and more accessible diagnostic screening.
+
 A comprehensive AI-powered clinical decision support system for Parkinson's disease diagnosis using multi-modal analysis combining DaT scans, handwriting patterns, and voice biomarkers.
 
 ![Multi-Modal Analysis](https://img.shields.io/badge/Modalities-3-orange) ![Accuracy Target](https://img.shields.io/badge/Target_Accuracy-85%25-success)
