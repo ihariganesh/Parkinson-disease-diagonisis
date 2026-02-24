@@ -21,11 +21,13 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = None
+    model: Optional[str] = "llama"
 
 
 @router.post("/ask")
 async def ask_chatbot(
     message: str = Body(..., embed=True),
+    model: str = Body("llama", embed=True),
     current_user: User = Depends(get_current_user),
 ):
     """Ask the AI chatbot a health-related question using local Llama 3.2."""
@@ -35,6 +37,7 @@ async def ask_chatbot(
         reply = await chatbot_ask(
             message=message,
             user_name=user_name,
+            preferred_model=model,
         )
 
         return {"reply": reply}
@@ -66,6 +69,7 @@ async def chat_with_history(
             message=request.message,
             user_name=user_name,
             conversation_history=history,
+            preferred_model=request.model,
         )
 
         return {"reply": reply}

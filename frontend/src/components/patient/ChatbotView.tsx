@@ -7,12 +7,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 
 export default function ChatbotView() {
     const { state } = useAuth();
-    const [messages, setMessages] = useState<{ role: 'user' | 'bot', text: string }[]>([
-        { role: 'bot', text: 'Hello! I\'m your ParkinsonCare AI assistant, powered by Llama 3.2. How can I help you today?' }
+    const [messages, setMessages] = useState<{ role: 'user' | 'bot', text: string, modelType?: string }[]>([
+        { role: 'bot', text: 'Hello! I\'m your ParkinsonCare AI assistant. How can I help you today?', modelType: 'llama' }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [aiOnline, setAiOnline] = useState<boolean | null>(null);
+    const [selectedModel, setSelectedModel] = useState<'llama' | 'gemma'>('llama');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -46,11 +47,11 @@ export default function ChatbotView() {
 
         try {
             const response = await axios.post(`${API_BASE_URL}/chatbot/ask`,
-                { message: userMessage },
+                { message: userMessage, model: selectedModel },
                 { headers: { Authorization: `Bearer ${state.token}` } }
             );
 
-            setMessages(prev => [...prev, { role: 'bot', text: response.data.reply }]);
+            setMessages(prev => [...prev, { role: 'bot', text: response.data.reply, modelType: selectedModel }]);
         } catch (error) {
             console.error('Chatbot error:', error);
             setMessages(prev => [...prev, { role: 'bot', text: 'Sorry, I\'m having trouble connecting. Please make sure Ollama is running.' }]);
@@ -66,7 +67,21 @@ export default function ChatbotView() {
                     <ChatBubbleBottomCenterTextIcon className="h-6 w-6" />
                     <div>
                         <h3 className="font-bold text-lg">AI Health Assistant</h3>
-                        <p className="text-xs text-indigo-200">Powered by 🦙 Llama 3.2</p>
+                        <div className="mt-1 flex gap-2">
+                            <button
+                                onClick={() => setSelectedModel('llama')}
+                                className={`text-xs px-2 py-1 rounded-sm transition-colors ${selectedModel === 'llama' ? 'bg-indigo-700 text-white' : 'bg-indigo-500 text-indigo-100 hover:bg-indigo-600'}`}
+                            >
+                                🦙 Llama 3.2
+                            </button>
+                            <button
+                                onClick={() => setSelectedModel('gemma')}
+                                className={`text-xs px-2 py-1 rounded-sm transition-colors ${selectedModel === 'gemma' ? 'bg-indigo-700 text-white' : 'bg-indigo-500 text-indigo-100 hover:bg-indigo-600'}`}
+                                title="Best for regional languages"
+                            >
+                                ✨ Gemma 3
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -84,7 +99,9 @@ export default function ChatbotView() {
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[70%] rounded-2xl p-4 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-tl-sm'}`}>
                             {msg.role === 'bot' && (
-                                <span className="text-xs text-indigo-400 font-medium block mb-1">🦙 Llama 3.2</span>
+                                <span className="text-xs text-indigo-400 font-medium block mb-1">
+                                    {msg.modelType === 'gemma' ? '✨ Gemma 3' : '🦙 Llama 3.2'}
+                                </span>
                             )}
                             <p className="whitespace-pre-wrap">{msg.text}</p>
                         </div>
@@ -93,7 +110,7 @@ export default function ChatbotView() {
                 {loading && (
                     <div className="flex justify-start">
                         <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 flex items-center gap-2">
-                            <span className="text-xs text-indigo-400 mr-1">🦙</span>
+                            <span className="text-xs text-indigo-400 mr-1">{selectedModel === 'gemma' ? '✨' : '🦙'}</span>
                             <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                             <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                             <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />

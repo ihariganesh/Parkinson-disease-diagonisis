@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 
 
 async def _call_ollama(
@@ -66,6 +67,57 @@ async def _call_ollama(
         return None
     except Exception as e:
         logger.error(f"Ollama call failed: {e}")
+        return None
+
+async def _call_openrouter(
+    prompt: str,
+    system_prompt: str = "",
+    temperature: float = 0.7,
+    max_tokens: int = 1024,
+    timeout: float = 60.0,
+) -> Optional[str]:
+    """
+    Send a prompt via OpenRouter (defaults to Gemma 3 for multi-lingual tasks).
+    """
+    if not OPENROUTER_API_KEY:
+        logger.warning("OPENROUTER_API_KEY is not set.")
+        return None
+
+    try:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": "google/gemma-3-27b-it:free",
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                json=payload,
+                headers=headers,
+                timeout=timeout,
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            else:
+                logger.error(f"OpenRouter returned {response.status_code}: {response.text[:300]}")
+                return None
+
+    except Exception as e:
+        logger.error(f"OpenRouter call failed: {e}")
         return None
 
 
@@ -274,6 +326,7 @@ async def chatbot_ask(
     message: str,
     user_name: str = "Patient",
     conversation_history: Optional[List[Dict[str, str]]] = None,
+    preferred_model: str = "llama",
 ) -> str:
     """
     Handle a chatbot question using local Llama 3.2.
@@ -288,6 +341,7 @@ async def chatbot_ask(
         "- DO NOT provide definitive medical diagnoses\n"
         "- Always recommend consulting a neurologist for specific medical decisions\n"
         "- Provide evidence-based information when possible\n"
+        "- If the user asks in a regional language (e.g. Tamil, Japanese, Malayalam, Hindi), answer in that SAME language fluently.\n"
         "- If the question is not health-related, politely guide the user back\n"
         "- Keep responses under 300 words unless the topic requires more detail\n"
         f"- The patient's name is {user_name}\n"
@@ -301,6 +355,19 @@ async def chatbot_ask(
             content = msg.get("content", "")
             context += f"{role.capitalize()}: {content}\n"
         message = context + f"\nPatient's new question: {message}"
+
+    if preferred_model == "gemma" and OPENROUTER_API_KEY:
+        response = await _call_openrouter(
+            prompt=message,
+            system_prompt=system_prompt,
+            temperature=0.7,
+            max_tokens=1024,
+            timeout=60.0,
+        )
+        if response:
+            return response
+            
+        logger.warning("Gemma/OpenRouter failed, falling back to local Llama 3.2")
 
     response = await _call_ollama(
         prompt=message,
@@ -316,5 +383,5 @@ async def chatbot_ask(
         return (
             "I'm sorry, I'm having trouble connecting to my AI engine right now. "
             "Please try again in a moment. If the issue persists, please ensure "
-            "that the Ollama service is running on your system."
+            "that the Ollama service or internet connection is running on your system."
         )

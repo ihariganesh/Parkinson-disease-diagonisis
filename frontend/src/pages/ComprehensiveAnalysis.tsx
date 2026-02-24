@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  CloudArrowUpIcon, 
-  BeakerIcon, 
-  PencilSquareIcon, 
+import {
+  CloudArrowUpIcon,
+  BeakerIcon,
+  PencilSquareIcon,
   MicrophoneIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -48,7 +48,7 @@ interface AnalysisResult {
 
 export default function ComprehensiveAnalysis() {
   const navigate = useNavigate();
-  
+
   // File states
   const [datScans, setDatScans] = useState<File[]>([]);
   const [spiralImage, setSpiralImage] = useState<File | null>(null);
@@ -70,7 +70,7 @@ export default function ComprehensiveAnalysis() {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       setDatScans(files);
-      
+
       // Create previews
       const previews = files.map(file => URL.createObjectURL(file));
       setDatPreviews(previews);
@@ -165,18 +165,11 @@ export default function ComprehensiveAnalysis() {
     setError('');
   };
 
-  const getConfidenceColor = (level: string) => {
-    switch (level) {
-      case 'High': return 'text-green-600 bg-green-100';
-      case 'Moderate': return 'text-yellow-600 bg-yellow-100';
-      case 'Low': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
+
 
   const getDiagnosisColor = (diagnosis: string) => {
-    return diagnosis.includes('Parkinson') 
-      ? 'text-red-600 bg-red-50 border-red-200' 
+    return diagnosis.includes('Parkinson')
+      ? 'text-red-600 bg-red-50 border-red-200'
       : 'text-green-600 bg-green-50 border-green-200';
   };
 
@@ -254,7 +247,7 @@ export default function ComprehensiveAnalysis() {
             <p className="text-sm text-gray-600 mb-4">
               Upload spiral and/or wave drawings
             </p>
-            
+
             {/* Spiral */}
             <label className="block mb-3">
               <span className="text-xs text-gray-500 mb-1 block">Spiral Drawing</span>
