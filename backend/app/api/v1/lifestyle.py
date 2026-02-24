@@ -6,7 +6,7 @@ Provides AI-powered personalized lifestyle recommendations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from ...db.database import get_db
 from ...db.models import User
@@ -60,7 +60,17 @@ async def generate_lifestyle_recommendations(
             
             if cached:
                 # Check if cache is still valid (24 hours)
-                if cached.expires_at is None or cached.expires_at > datetime.now():
+                try:
+                    now = datetime.now(timezone.utc)
+                    expires = cached.expires_at
+                    # Make expires_at timezone-aware if it's naive
+                    if expires is not None and expires.tzinfo is None:
+                        expires = expires.replace(tzinfo=timezone.utc)
+                    cache_valid = expires is None or expires > now
+                except Exception:
+                    cache_valid = False
+                
+                if cache_valid:
                     print(f"✅ Returning cached recommendations for report {report_id}")
                     return {
                         'success': True,
@@ -139,7 +149,6 @@ async def generate_lifestyle_recommendations(
             }
         
         # Cache the recommendations for 24 hours
-        from datetime import timedelta
         import uuid
         
         # Remove old cache if exists
@@ -159,7 +168,7 @@ async def generate_lifestyle_recommendations(
                 'severity': severity,
                 'stage': stage
             },
-            expires_at=datetime.now() + timedelta(hours=24)
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
         )
         db.add(cached_rec)
         db.commit()

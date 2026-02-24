@@ -1,10 +1,11 @@
 """
-Unified AI Service supporting multiple providers (Gemini, Groq)
+Unified AI Service supporting multiple providers (NVIDIA NIM Kimi, Groq, Gemini)
 Automatically selects best available provider
 """
 
 import os
 import json
+import requests
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import logging
@@ -21,21 +22,42 @@ class MultiProviderAIService:
         self._initialize_providers()
     
     def _initialize_providers(self):
-        """Initialize all configured AI providers - Groq preferred"""
+        """Initialize all configured AI providers - NVIDIA NIM Kimi preferred"""
         
-        # Always try Groq FIRST (fast, reliable, and preferred)
+        # OpenRouter as PRIMARY provider
+        or_key = os.getenv('OPENROUTER_API_KEY', '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')
+        if or_key:
+            try:
+                self.providers.append({
+                    'name': 'OpenRouter',
+                    'api_key': or_key,
+                    'type': 'openrouter',
+                    'base_url': 'https://openrouter.ai/api/v1/chat/completions',
+                    'models': [
+                        'meta-llama/llama-3.3-70b-instruct:free',
+                        'google/gemini-2.0-flash-exp:free',
+                        'deepseek/deepseek-r1:free',
+                    ]
+                })
+                print(f"✅ OpenRouter initialized (PRIMARY PROVIDER) with key: {or_key[:12]}...***")
+            except Exception as e:
+                print(f"⚠️ Failed to initialize OpenRouter: {e}")
+        else:
+            print("⚠️ OPENROUTER_API_KEY not found - OpenRouter provider unavailable")
+        
+        # Groq as secondary provider
         groq_key = os.getenv('GROQ_API_KEY', '')
         if groq_key:
             try:
                 from groq import Groq
                 client = Groq(api_key=groq_key)
                 self.providers.append({
-                    'name': 'Groq (Primary)',
+                    'name': 'Groq (Secondary)',
                     'client': client,
                     'type': 'groq',
                     'models': ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768']
                 })
-                print(f"✅ Groq AI initialized (PRIMARY PROVIDER) with key: {groq_key[:20]}...***")
+                print(f"✅ Groq AI initialized (SECONDARY PROVIDER) with key: {groq_key[:20]}...***")
             except Exception as e:
                 print(f"⚠️ Failed to initialize Groq: {e}")
         else:
@@ -72,7 +94,8 @@ class MultiProviderAIService:
         if not self.providers:
             print("❌ No AI providers available - will use fallback recommendations")
         else:
-            print(f"✅ Initialized {len(self.providers)} AI provider(s) - Using Groq as primary")
+            primary = self.providers[0]['name'] if self.providers else 'None'
+            print(f"✅ Initialized {len(self.providers)} AI provider(s) - Primary: {primary}")
     
     async def generate_recommendations(
         self,
@@ -103,7 +126,9 @@ class MultiProviderAIService:
             try:
                 print(f"🔄 Trying provider: {provider['name']}")
                 
-                if provider['type'] == 'groq':
+                if provider['type'] == 'openrouter':
+                    response = await self._generate_with_openrouter(provider, prompt)
+                elif provider['type'] == 'groq':
                     response = await self._generate_with_groq(provider, prompt)
                 elif provider['type'] == 'gemini':
                     response = await self._generate_with_gemini(provider, prompt)
@@ -146,6 +171,80 @@ class MultiProviderAIService:
         # All providers failed - use fallback
         print("⚠️ All AI providers failed - using fallback recommendations")
         return self._get_fallback_recommendations(diagnosis, age)
+    
+    async def _generate_with_openrouter(self, provider: Dict[str, Any], prompt: str) -> str:
+        """Generate with OpenRouter API"""
+        import httpx
+        
+        headers = {
+            "Authorization": f"Bearer {provider['api_key']}",
+            "HTTP-Referer": "http://localhost:5173", # Optional, for OpenRouter rankings
+            "X-Title": "ParkinsonCare", # Optional, for OpenRouter rankings
+            "Content-Type": "application/json"
+        }
+        
+        last_error = None
+        async with httpx.AsyncClient() as client:
+            for current_model in provider['models']:
+                try:
+                    payload = {
+                        "model": current_model,
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "You are an expert neurologist and lifestyle medicine specialist. Generate comprehensive, personalized lifestyle recommendations in valid JSON format. Always respond with ONLY a valid JSON object, no markdown formatting."
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        "max_tokens": 4096,
+                        "temperature": 0.7,
+                        "stream": False,
+                        "provider": {
+                            "data_collection": "allow",
+                            "allow_fallbacks": True
+                        }
+                    }
+                    
+                    print(f"🔄 Calling OpenRouter API (model={current_model})...")
+                    response = await client.post(
+                        provider['base_url'],
+                        headers=headers,
+                        json=payload,
+                        timeout=180.0
+                    )
+                    
+                    if response.status_code != 200:
+                        error_detail = response.text[:300]
+                        raise Exception(f"OpenRouter API error {response.status_code}: {error_detail}")
+                    
+                    data = response.json()
+                    content = data["choices"][0]["message"]["content"]
+                    
+                    # Strip markdown code blocks just in case
+                    if content.startswith("```json"):
+                        content = content[7:]
+                    if content.startswith("```"):
+                        content = content[3:]
+                    if content.endswith("```"):
+                        content = content[:-3]
+                    
+                    content = content.strip()
+                    
+                    if not content:
+                        raise Exception(f"OpenRouter model {current_model} returned empty response")
+                    
+                    print(f"✅ OpenRouter response received from {current_model} ({len(content)} chars)")
+                    return content
+                    
+                except Exception as e:
+                    print(f"⚠️ OpenRouter model {current_model} failed: {e}")
+                    last_error = e
+                    continue
+                    
+        raise Exception(f"All OpenRouter models failed. Last error: {last_error}")
     
     async def _generate_with_groq(self, provider: Dict[str, Any], prompt: str) -> str:
         """Generate with Groq API"""

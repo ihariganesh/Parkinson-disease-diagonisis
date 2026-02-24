@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import type { ApiResponse, ErrorResponse } from '../types';
+import type { ApiResponse } from '../types';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -8,7 +8,7 @@ class ApiClient {
 
   constructor() {
     this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
-    
+
     this.client = axios.create({
       baseURL: this.baseURL,
       headers: {
@@ -40,20 +40,29 @@ class ApiClient {
       (response: AxiosResponse) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Token expired or invalid
+          // Token expired or invalid - clear auth state
           localStorage.removeItem('auth_token');
           localStorage.removeItem('user');
-          window.location.href = '/login';
+          // Use a small delay to allow pending promises to settle before redirecting
+          // This prevents the PatientDashboard crash from unhandled promise rejections
+          setTimeout(() => {
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          }, 100);
         }
-        
-        const errorResponse: ErrorResponse = {
-          error: error.response?.data?.error || 'Network Error',
-          message: error.response?.data?.message || error.message,
-          statusCode: error.response?.status || 500,
-          timestamp: new Date().toISOString(),
-        };
-        
-        return Promise.reject(errorResponse);
+
+        const errorMessage = error.response?.data?.detail
+          || error.response?.data?.message
+          || error.message
+          || 'An error occurred';
+
+        // Return a proper Error object so instanceof checks work correctly
+        const err = new Error(errorMessage);
+        (err as any).statusCode = error.response?.status || 500;
+        (err as any).errorCode = error.response?.data?.error || 'Network Error';
+
+        return Promise.reject(err);
       }
     );
   }

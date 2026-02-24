@@ -7,7 +7,13 @@ Avoids real-time feature extraction to prevent hanging
 import numpy as np
 import pickle
 from pathlib import Path
-from tensorflow import keras
+try:
+    from tensorflow import keras
+    TF_AVAILABLE = True
+except ImportError:
+    keras = None
+    TF_AVAILABLE = False
+    print("⚠️  TensorFlow not available - speech ML model disabled")
 from typing import Dict, Optional
 import os
 

@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, EyeSlashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import { Alert, LoadingSpinner } from "../common";
+import axios from "axios";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -29,7 +32,42 @@ export default function RegisterForm() {
     licenseNumber: "",
     specialization: "",
     hospital: "",
+    // Linking to Doctor (Patient only)
+    assignedDoctorId: "",
   });
+
+  const [doctors, setDoctors] = useState<{ id: string; name: string }[]>([]);
+  const [doctorSearch, setDoctorSearch] = useState("");
+  const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Fetch available doctors for patient signup
+    const fetchDoctors = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/auth/doctors`);
+        setDoctors(response.data);
+      } catch (err) {
+        console.error("Failed to fetch doctors list", err);
+      }
+    };
+    fetchDoctors();
+  }, []);
+
+  // Handle clicking outside of doctor dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDoctorDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredDoctors = doctors.filter((doc) =>
+    doc.name.toLowerCase().includes(doctorSearch.toLowerCase())
+  );
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -76,6 +114,7 @@ export default function RegisterForm() {
         emergencyContactName: formData.emergencyContactName || undefined,
         emergencyContactPhone: formData.emergencyContactPhone || undefined,
         emergencyContactRelationship: formData.emergencyContactRelationship || undefined,
+        assigned_doctor_id: formData.role === "patient" ? formData.assignedDoctorId || undefined : undefined,
         ...(formData.role === "doctor" && {
           licenseNumber: formData.licenseNumber,
           specialization: formData.specialization,
@@ -613,6 +652,65 @@ export default function RegisterForm() {
                   </div>
                 </div>
               </>
+            )}
+
+            {/* Link to Doctor (For Patients Only) */}
+            {formData.role === "patient" && (
+              <div className="pt-4 border-t border-gray-200" ref={dropdownRef}>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Your Doctor (Optional)</h3>
+                <div className="relative">
+                  <label
+                    htmlFor="doctorSearch"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Select your doctor to automatically share reports
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="doctorSearch"
+                      type="text"
+                      className="input-field pl-10"
+                      placeholder="Type doctor's name..."
+                      value={doctorSearch}
+                      onChange={(e) => {
+                        setDoctorSearch(e.target.value);
+                        setFormData({ ...formData, assignedDoctorId: "" }); // Reset ID if typing
+                        setShowDoctorDropdown(true);
+                      }}
+                      onFocus={() => setShowDoctorDropdown(true)}
+                    />
+                  </div>
+
+                  {/* Dropdown Menu */}
+                  {showDoctorDropdown && (
+                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm">
+                      {filteredDoctors.length === 0 ? (
+                        <div className="cursor-default select-none relative py-2 pl-3 pr-9 text-gray-500">
+                          {doctors.length === 0 ? "Loading doctors..." : "No doctors found."}
+                        </div>
+                      ) : (
+                        filteredDoctors.map((doc) => (
+                          <div
+                            key={doc.id}
+                            className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 ${formData.assignedDoctorId === doc.id ? "bg-blue-100 text-blue-900" : "text-gray-900"
+                              }`}
+                            onClick={() => {
+                              setFormData({ ...formData, assignedDoctorId: doc.id });
+                              setDoctorSearch(doc.name);
+                              setShowDoctorDropdown(false);
+                            }}
+                          >
+                            <span className="block truncate font-medium">{doc.name}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 

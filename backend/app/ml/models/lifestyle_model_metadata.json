@@ -1,0 +1,117 @@
+{
+  "dataset": "parkinson_lifestyle_recommendation_dataset_12000.csv",
+  "feature_names": [
+    "gender",
+    "age_group",
+    "city",
+    "state",
+    "previous_condition",
+    "age",
+    "parkinson_status",
+    "parkinson_stage"
+  ],
+  "categorical_features": [
+    "gender",
+    "age_group",
+    "city",
+    "state",
+    "previous_condition"
+  ],
+  "numeric_features": [
+    "age",
+    "parkinson_status",
+    "parkinson_stage"
+  ],
+  "target_columns": [
+    "recommended_exercise",
+    "recommended_diet",
+    "recommended_sleep",
+    "recommended_stress_management"
+  ],
+  "accuracy": {
+    "recommended_exercise": 0.8345833333333333,
+    "recommended_diet": 0.9945833333333334,
+    "recommended_sleep": 1.0,
+    "recommended_stress_management": 1.0
+  },
+  "overall_accuracy": 0.9572916666666667,
+  "train_size": 9600,
+  "test_size": 2400,
+  "total_records": 12000,
+  "unique_values": {
+    "gender": [
+      "Female",
+      "Male"
+    ],
+    "previous_condition": [
+      "Arthritis",
+      "Diabetes",
+      "Heart Disease",
+      "Hypertension",
+      "Hypertension + Diabetes",
+      "None",
+      "Obesity"
+    ],
+    "city": [
+      "Bangalore",
+      "Chennai",
+      "Coimbatore",
+      "Erode",
+      "Hyderabad",
+      "Karur",
+      "Madurai",
+      "Mumbai",
+      "Salem"
+    ],
+    "state": [
+      "KA",
+      "MH",
+      "TN",
+      "TS"
+    ],
+    "age_group": [
+      "elderly",
+      "middle",
+      "senior",
+      "very_elderly",
+      "young"
+    ]
+  },
+  "parkinson_labels": {
+    "parkinson_status": {
+      "0": "No Parkinson",
+      "1": "Has Parkinson"
+    },
+    "parkinson_stage": {
+      "0": "No Parkinson (healthy)",
+      "1": "Early Stage (mild symptoms)",
+      "2": "Moderate Stage",
+      "3": "Advanced Stage"
+    }
+  },
+  "target_labels": {
+    "recommended_exercise": [
+      "Assisted Physiotherapy + Fall Prevention",
+      "Balance Training + Light Strength Work",
+      "Customized Activity Plan",
+      "Moderate Cardio + Flexibility",
+      "Regular Exercise 4-5 days/week"
+    ],
+    "recommended_diet": [
+      "Balanced Whole Food Diet",
+      "Low Cholesterol Heart Diet",
+      "Low Sodium DASH Diet",
+      "Low Sugar High Fiber Diet",
+      "Mediterranean + Omega-3 Diet"
+    ],
+    "recommended_sleep": [
+      "6-8 Hours Healthy Sleep",
+      "7-8 Hours Consistent Sleep",
+      "8 Hours Fixed Sleep Routine"
+    ],
+    "recommended_stress_management": [
+      "Guided Meditation + Breathing Therapy",
+      "Yoga + Outdoor Relaxation"
+    ]
+  }
+}

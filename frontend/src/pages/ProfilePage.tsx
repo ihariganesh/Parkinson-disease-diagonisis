@@ -19,6 +19,7 @@ interface UserProfile {
   patient_id?: string | null;
   date_of_birth: string | null;
   phone_number: string | null;
+  gender: string | null;
   address_street: string | null;
   address_city: string | null;
   address_state: string | null;
@@ -43,6 +44,7 @@ const ProfilePage: React.FC = () => {
     last_name: '',
     date_of_birth: '',
     phone_number: '',
+    gender: '',
     address_street: '',
     address_city: '',
     address_state: '',
@@ -62,12 +64,12 @@ const ProfilePage: React.FC = () => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('auth_token');
-      
+
       if (!token) {
         setError('No authentication token found. Please login again.');
         return;
       }
-      
+
       const response = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/patients/profile`,
         {
@@ -75,15 +77,16 @@ const ProfilePage: React.FC = () => {
         }
       );
       setProfile(response.data);
-      
+
       // Populate form data
       setFormData({
         first_name: response.data.first_name || '',
         last_name: response.data.last_name || '',
-        date_of_birth: response.data.date_of_birth 
-          ? new Date(response.data.date_of_birth).toISOString().split('T')[0] 
+        date_of_birth: response.data.date_of_birth
+          ? new Date(response.data.date_of_birth).toISOString().split('T')[0]
           : '',
         phone_number: response.data.phone_number || '',
+        gender: response.data.gender || '',
         address_street: response.data.address_street || '',
         address_city: response.data.address_city || '',
         address_state: response.data.address_state || '',
@@ -127,31 +130,31 @@ const ProfilePage: React.FC = () => {
       setSaving(true);
       setError(null);
       const token = localStorage.getItem('auth_token');
-      
+
       if (!token) {
         setError('No authentication token found. Please login again.');
         return;
       }
-      
+
       console.log('Saving profile data:', formData);
-      
+
       const response = await axios.put(
         `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/patients/profile`,
         formData,
         {
-          headers: { 
+          headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
       );
-      
+
       console.log('Profile update response:', response.data);
-      
+
       setSuccessMessage('Profile updated successfully!');
       setIsEditing(false);
       await fetchProfile();
-      
+
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Failed to update profile';
@@ -170,10 +173,11 @@ const ProfilePage: React.FC = () => {
       setFormData({
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
-        date_of_birth: profile.date_of_birth 
-          ? new Date(profile.date_of_birth).toISOString().split('T')[0] 
+        date_of_birth: profile.date_of_birth
+          ? new Date(profile.date_of_birth).toISOString().split('T')[0]
           : '',
         phone_number: profile.phone_number || '',
+        gender: profile.gender || '',
         address_street: profile.address_street || '',
         address_city: profile.address_city || '',
         address_state: profile.address_state || '',
@@ -209,7 +213,7 @@ const ProfilePage: React.FC = () => {
                 <p className="text-sm text-gray-600 mt-1">Manage your personal information</p>
               </div>
             </div>
-            
+
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
@@ -247,7 +251,7 @@ const ProfilePage: React.FC = () => {
             <p className="text-red-800">{error}</p>
           </div>
         )}
-        
+
         {successMessage && (
           <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
             <p className="text-green-800">{successMessage}</p>
@@ -259,7 +263,7 @@ const ProfilePage: React.FC = () => {
           {/* Basic Information */}
           <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
-            
+
             {/* Patient ID - Prominent Display */}
             {profile?.patient_id && (
               <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
@@ -289,7 +293,7 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -309,7 +313,7 @@ const ProfilePage: React.FC = () => {
                   <p className="text-gray-900 py-2">{profile?.first_name}</p>
                 )}
               </div>
-              
+
               <div>
                 <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
                   Last Name
@@ -328,7 +332,7 @@ const ProfilePage: React.FC = () => {
                   <p className="text-gray-900 py-2">{profile?.last_name}</p>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email
@@ -336,7 +340,7 @@ const ProfilePage: React.FC = () => {
                 <p className="text-gray-900 py-2">{profile?.email}</p>
                 <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number
@@ -354,7 +358,29 @@ const ProfilePage: React.FC = () => {
                   <p className="text-gray-900 py-2">{profile?.phone_number || 'Not provided'}</p>
                 )}
               </div>
-              
+
+              <div>
+                <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+                  Gender
+                </label>
+                {isEditing ? (
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, gender: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 py-2 capitalize">{profile?.gender || 'Not provided'}</p>
+                )}
+              </div>
               <div>
                 <label htmlFor="date_of_birth" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <CalendarIcon className="h-5 w-5 text-gray-500" />
@@ -372,18 +398,18 @@ const ProfilePage: React.FC = () => {
                   />
                 ) : (
                   <p className="text-gray-900 py-2">
-                    {profile?.date_of_birth 
+                    {profile?.date_of_birth
                       ? new Date(profile.date_of_birth).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
                       : 'Not provided'
                     }
                   </p>
                 )}
               </div>
-              
+
               {!isEditing && age !== null && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -419,7 +445,7 @@ const ProfilePage: React.FC = () => {
                   <p className="text-gray-900 py-2">{profile?.address_street || 'Not provided'}</p>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   City
@@ -437,7 +463,7 @@ const ProfilePage: React.FC = () => {
                   <p className="text-gray-900 py-2">{profile?.address_city || 'Not provided'}</p>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   State/Province
@@ -455,7 +481,7 @@ const ProfilePage: React.FC = () => {
                   <p className="text-gray-900 py-2">{profile?.address_state || 'Not provided'}</p>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   ZIP/Postal Code
@@ -473,7 +499,7 @@ const ProfilePage: React.FC = () => {
                   <p className="text-gray-900 py-2">{profile?.address_zip || 'Not provided'}</p>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Country
@@ -518,7 +544,7 @@ const ProfilePage: React.FC = () => {
                   <p className="text-gray-900 py-2">{profile?.emergency_contact_name || 'Not provided'}</p>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Contact Phone
@@ -536,7 +562,7 @@ const ProfilePage: React.FC = () => {
                   <p className="text-gray-900 py-2">{profile?.emergency_contact_phone || 'Not provided'}</p>
                 )}
               </div>
-              
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Relationship
@@ -561,12 +587,12 @@ const ProfilePage: React.FC = () => {
           <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-2">Account Information</h3>
             <p className="text-xs text-gray-600">
-              Member since: {profile?.created_at 
+              Member since: {profile?.created_at
                 ? new Date(profile.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })
                 : 'Unknown'
               }
             </p>

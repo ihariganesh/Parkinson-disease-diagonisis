@@ -17,6 +17,7 @@ class ProfileUpdateRequest(BaseModel):
     last_name: Optional[str] = None
     date_of_birth: Optional[str] = None
     phone_number: Optional[str] = None
+    gender: Optional[str] = None
     address_street: Optional[str] = None
     address_city: Optional[str] = None
     address_state: Optional[str] = None
@@ -43,6 +44,7 @@ async def get_profile(
             "patient_id": current_user.patient_id,
             "date_of_birth": current_user.date_of_birth.isoformat() if current_user.date_of_birth else None,
             "phone_number": current_user.phone_number,
+            "gender": current_user.gender if hasattr(current_user, 'gender') else None,
             "address_street": current_user.address_street if hasattr(current_user, 'address_street') else None,
             "address_city": current_user.address_city if hasattr(current_user, 'address_city') else None,
             "address_state": current_user.address_state if hasattr(current_user, 'address_state') else None,
@@ -88,6 +90,8 @@ async def update_profile(
                 current_user.date_of_birth = datetime.strptime(profile_data.date_of_birth.split('T')[0], '%Y-%m-%d')
         if profile_data.phone_number is not None:
             current_user.phone_number = profile_data.phone_number
+        if profile_data.gender is not None:
+            current_user.gender = profile_data.gender
         if profile_data.address_street is not None:
             current_user.address_street = profile_data.address_street
         if profile_data.address_city is not None:

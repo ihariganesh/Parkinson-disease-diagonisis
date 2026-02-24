@@ -7,8 +7,21 @@ import sys
 from pathlib import Path
 import numpy as np
 from typing import Dict, Tuple
-import tensorflow as tf
-import cv2
+try:
+    import tensorflow as tf
+    TF_AVAILABLE = True
+except ImportError:
+    tf = None
+    TF_AVAILABLE = False
+    print("⚠️  TensorFlow not available - handwriting ML model disabled")
+
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    cv2 = None
+    CV2_AVAILABLE = False
+    print("⚠️  OpenCV not available - handwriting image processing disabled")
 
 
 class HandwritingService:

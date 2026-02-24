@@ -9,9 +9,23 @@ import numpy as np
 from datetime import datetime
 import json
 from typing import List, Dict, Optional
-import tensorflow as tf
-from tensorflow import keras
-import cv2
+try:
+    import tensorflow as tf
+    from tensorflow import keras
+    TF_AVAILABLE = True
+except ImportError:
+    tf = None
+    keras = None
+    TF_AVAILABLE = False
+    print("⚠️  TensorFlow not available - DaT ML model disabled")
+
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    cv2 = None
+    CV2_AVAILABLE = False
+    print("⚠️  OpenCV not available - DaT image processing limited")
 
 # Add ml_models to path
 ml_models_path = Path(__file__).parent.parent.parent / "ml_models"

@@ -11,17 +11,19 @@ router = APIRouter()
 
 class MedicalDataResponse(BaseModel):
     id: str
-    data_type: str
-    file_name: str
-    file_size: Optional[int]
-    uploaded_at: datetime
-    processed_at: Optional[datetime]
+    type: str
+    fileName: str
+    fileSize: Optional[int] = None
+    uploadedAt: datetime
+    processedAt: Optional[datetime] = None
+    analysisResult: Optional[Dict[str, Any]] = None
 
 class MedicalDataListResponse(BaseModel):
-    data: List[MedicalDataResponse]
+    items: List[MedicalDataResponse]
     total: int
     page: int
     limit: int
+    totalPages: int
 
 class DiagnosisReportResponse(BaseModel):
     id: str
@@ -51,7 +53,7 @@ class ApiResponseWrapper(BaseModel):
     message: Optional[str] = None
     error: Optional[str] = None
 
-@router.get("/data", response_model=MedicalDataListResponse)
+@router.get("/data")
 async def get_medical_data_list(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
@@ -66,34 +68,48 @@ async def get_medical_data_list(
         # Query medical data for current user
         query = db.query(MedicalData).filter(MedicalData.patient_id == current_user.id)
         total = query.count()
-        medical_data = query.offset(offset).limit(limit).all()
+        medical_data = query.order_by(MedicalData.uploaded_at.desc()).offset(offset).limit(limit).all()
         
-        # Convert to response format
+        # Calculate total pages
+        total_pages = (total + limit - 1) // limit if total > 0 else 0
+        
+        # Convert to response format with camelCase keys matching frontend
         data_list = []
         for data in medical_data:
             data_list.append(MedicalDataResponse(
                 id=data.id,
-                data_type=data.type.value if hasattr(data.type, 'value') else str(data.type),
-                file_name=data.file_name or "Unknown",
-                file_size=data.file_size,
-                uploaded_at=data.uploaded_at,
-                processed_at=data.processed_at
+                type=data.type.value if hasattr(data.type, 'value') else str(data.type),
+                fileName=data.file_name or "Unknown",
+                fileSize=data.file_size,
+                uploadedAt=data.uploaded_at,
+                processedAt=data.processed_at,
+                analysisResult=None
             ))
         
-        return MedicalDataListResponse(
-            data=data_list,
-            total=total,
-            page=page,
-            limit=limit
-        )
+        # Return wrapped successfully with 'items' key matching frontend PaginatedResponse
+        return {
+            "success": True,
+            "data": MedicalDataListResponse(
+                items=data_list,
+                total=total,
+                page=page,
+                limit=limit,
+                totalPages=total_pages
+            )
+        }
     except Exception as e:
         # Return empty data for now to prevent frontend errors
-        return MedicalDataListResponse(
-            data=[],
-            total=0,
-            page=page,
-            limit=limit
-        )
+        return {
+            "success": False,
+            "error": str(e),
+            "data": MedicalDataListResponse(
+                items=[],
+                total=0,
+                page=page,
+                limit=limit,
+                totalPages=0
+            )
+        }
 
 @router.get("/reports")
 async def get_medical_reports(

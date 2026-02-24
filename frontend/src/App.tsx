@@ -28,14 +28,15 @@ import RecommendationsPage from "./pages/RecommendationsPage";
 // Component to redirect to appropriate dashboard based on user role
 function DashboardRedirect() {
   const { state } = useAuth();
-  
+  const loc = useLocation();
+  const hash = loc.hash || ''; // Preserve the hash (e.g. #analytics)
+
   if (state.user?.role === 'doctor') {
-    return <Navigate to="/doctor/dashboard" replace />;
+    return <Navigate to={`/doctor/dashboard${hash}`} replace />;
   } else if (state.user?.role === 'patient') {
-    return <Navigate to="/patient/dashboard" replace />;
+    return <Navigate to={`/patient/dashboard${hash}`} replace />;
   } else {
-    // Fallback if role is not determined
-    return <Navigate to="/patient/dashboard" replace />;
+    return <Navigate to={`/patient/dashboard${hash}`} replace />;
   }
 }
 
@@ -54,7 +55,7 @@ function AppRoutes() {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
-        
+
         {/* Public Demo routes - accessible without authentication */}
         <Route path="/demo/handwriting" element={<HandwritingPage />} />
         <Route path="/demo/speech" element={<SpeechAnalysisPage />} />
@@ -63,13 +64,13 @@ function AppRoutes() {
         {/* MRI demo route removed during cleanup */}
 
         {/* Dashboard redirect - automatically redirect to appropriate dashboard based on role */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute allowedRoles={["patient", "doctor"]}>
               <DashboardRedirect />
             </ProtectedRoute>
-          } 
+          }
         />
 
         {/* Additional helpful redirects */}
@@ -102,7 +103,7 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         {/* Profile Page */}
         <Route
           path="/profile"
@@ -112,7 +113,7 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         {/* Reports Page */}
         <Route
           path="/reports"
@@ -122,7 +123,7 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         {/* Recommendations Page */}
         <Route
           path="/recommendations"
@@ -132,7 +133,7 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        
+
         {/* Comprehensive Analysis - Main multimodal analysis page */}
         <Route
           path="/comprehensive"
@@ -147,7 +148,7 @@ function AppRoutes() {
           path="/multimodal-upload"
           element={<Navigate to="/comprehensive" replace />}
         />
-        
+
         {/* Individual analysis routes removed - use /comprehensive instead */}
         {/* Redirects for backward compatibility */}
         <Route path="/handwriting" element={<Navigate to="/comprehensive" replace />} />

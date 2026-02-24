@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.db.models import User, UserRole
 from app.core.security import verify_password, create_access_token, get_password_hash, decode_access_token
+from app.db.models import User, UserRole, DoctorPatientLinkRequest, InvitationStatus
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 import uuid
@@ -36,6 +36,8 @@ class UserCreate(BaseModel):
     license_number: str = None
     specialization: str = None
     hospital: str = None
+    # Link request from patient
+    assigned_doctor_id: str = None
 
 class UserResponse(BaseModel):
     id: str
@@ -72,6 +74,22 @@ def generate_patient_id(db: Session) -> str:
         existing = db.query(User).filter(User.patient_id == patient_id).first()
         if not existing:
             return patient_id
+
+@router.get("/doctors")
+async def get_public_doctors(db: Session = Depends(get_db)):
+    """Get list of doctors available to select during registration"""
+    doctors = db.query(User).filter(
+        User.role == UserRole.DOCTOR,
+        User.is_active == True
+    ).all()
+    
+    return [
+        {
+            "id": d.id,
+            "name": f"Dr. {d.first_name} {d.last_name}",
+        }
+        for d in doctors
+    ]
 
 @router.post("/register", response_model=dict)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
@@ -129,6 +147,19 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
+    # If patient provided a doctor to link to during signup
+    if role_enum == UserRole.PATIENT and user_data.assigned_doctor_id:
+        link_req = DoctorPatientLinkRequest(
+            id=str(uuid.uuid4()),
+            patient_id=db_user.id,
+            doctor_id=user_data.assigned_doctor_id,
+            invitation_id=None,
+            status=InvitationStatus.PENDING,
+            patient_message="Connection requested during sign-up."
+        )
+        db.add(link_req)
+        db.commit()
     
     response_data = {
         "message": "User registered successfully",

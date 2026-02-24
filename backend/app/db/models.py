@@ -272,7 +272,7 @@ class DoctorPatientLinkRequest(Base):
     id = Column(String, primary_key=True, index=True)
     patient_id = Column(String, ForeignKey("users.id"), nullable=False)
     doctor_id = Column(String, ForeignKey("users.id"), nullable=False)
-    invitation_id = Column(String, ForeignKey("doctor_invitations.id"), nullable=False)
+    invitation_id = Column(String, ForeignKey("doctor_invitations.id"), nullable=True)
     
     # Request status
     status = Column(Enum(InvitationStatus), default=InvitationStatus.PENDING)

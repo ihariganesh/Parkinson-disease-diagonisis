@@ -11,19 +11,25 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 
+import { ChatBubbleLeftRightIcon, CpuChipIcon, UserGroupIcon } from "@heroicons/react/24/outline";
+
 const navigation = {
   patient: [
-    { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
+    { name: "Dashboard", href: "/patient/dashboard", icon: HomeIcon },
     { name: "Analysis", href: "/comprehensive", icon: SparklesIcon },
     { name: "Reports", href: "/reports", icon: ChartBarIcon },
     { name: "Recommendations", href: "/recommendations", icon: SparklesIcon },
+    { name: "Chatbot", href: "/patient/dashboard#chatbot", icon: CpuChipIcon },
+    { name: "Messages", href: "/patient/dashboard#messages", icon: ChatBubbleLeftRightIcon },
     { name: "Profile", href: "/profile", icon: UserCircleIcon },
   ],
   doctor: [
-    { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
-    { name: "Patients", href: "/doctor/patients", icon: UserCircleIcon },
-    { name: "Reports", href: "/reports", icon: ChartBarIcon },
-    { name: "Analytics", href: "/doctor/analytics", icon: ChartBarIcon },
+    { name: "Dashboard", href: "/doctor/dashboard", icon: HomeIcon },
+    { name: "Patient Requests", href: "/doctor/dashboard#requests", icon: UserGroupIcon },
+    { name: "Pending Reports", href: "/doctor/dashboard#pending", icon: ChartBarIcon },
+    { name: "My Patients", href: "/doctor/dashboard#patients", icon: UserCircleIcon },
+    { name: "Analytics", href: "/doctor/dashboard#analytics", icon: ChartBarIcon },
+    { name: "Messages", href: "/doctor/dashboard#messages", icon: ChatBubbleLeftRightIcon },
   ],
 };
 
@@ -45,7 +51,7 @@ export default function Navbar() {
 
   // Check if this is a demo page
   const isDemoPage = currentPath.startsWith('/demo/');
-  
+
   // If not authenticated and not on demo page, don't show navbar
   if (!state.user && !isDemoPage) return null;
 
