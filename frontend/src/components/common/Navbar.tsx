@@ -8,19 +8,19 @@ import {
   Bars3Icon,
   XMarkIcon,
   SparklesIcon,
+  ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 
-import { ChatBubbleLeftRightIcon, CpuChipIcon, UserGroupIcon } from "@heroicons/react/24/outline";
+import { ChatBubbleLeftRightIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 
 const navigation = {
   patient: [
     { name: "Dashboard", href: "/patient/dashboard", icon: HomeIcon },
     { name: "Analysis", href: "/comprehensive", icon: SparklesIcon },
+    { name: "Progression", href: "/longitudinal", icon: ArrowTrendingUpIcon },
     { name: "Reports", href: "/reports", icon: ChartBarIcon },
     { name: "Recommendations", href: "/recommendations", icon: SparklesIcon },
-    { name: "Chatbot", href: "/patient/dashboard#chatbot", icon: CpuChipIcon },
-    { name: "Messages", href: "/patient/dashboard#messages", icon: ChatBubbleLeftRightIcon },
     { name: "Profile", href: "/profile", icon: UserCircleIcon },
   ],
   doctor: [

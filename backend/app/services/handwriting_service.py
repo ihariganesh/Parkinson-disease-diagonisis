@@ -7,13 +7,14 @@ import sys
 from pathlib import Path
 import numpy as np
 from typing import Dict, Tuple
+
 try:
     import tensorflow as tf
     TF_AVAILABLE = True
 except ImportError:
     tf = None
     TF_AVAILABLE = False
-    print("⚠️  TensorFlow not available - handwriting ML model disabled")
+    print("⚠️  TensorFlow not available - handwriting ML model disabled. Falling back to SVM + HOG models.")
 
 try:
     import cv2
@@ -23,6 +24,14 @@ except ImportError:
     CV2_AVAILABLE = False
     print("⚠️  OpenCV not available - handwriting image processing disabled")
 
+try:
+    import joblib
+    from skimage.feature import hog
+    SVM_AVAILABLE = True
+except ImportError as e:
+    SVM_AVAILABLE = False
+    print(f"⚠️  skimage or joblib not available - SVM fallback disabled: {e}")
+
 
 class HandwritingService:
     """Handwriting analysis service for Parkinson's disease detection"""
@@ -31,11 +40,19 @@ class HandwritingService:
         """Initialize handwriting analyzer"""
         self.spiral_model = None
         self.wave_model = None
-        self.image_size = (224, 224)  # ResNet50 input size
+        
+        self.spiral_svm = None
+        self.spiral_scaler = None
+        self.wave_svm = None
+        self.wave_scaler = None
+        
+        self.image_size_cnn = (224, 224)  # ResNet50 input size
+        self.image_size_svm = (128, 128)  # SVM+HOG input size
+        
         self._load_models()
     
-    def preprocess_image(self, image_path: str) -> np.ndarray:
-        """Preprocess image for ResNet50 model"""
+    def preprocess_image(self, image_path: str, target_size: Tuple[int, int]) -> np.ndarray:
+        """Preprocess image for analysis"""
         try:
             # Read image
             image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -43,7 +60,7 @@ class HandwritingService:
                 raise ValueError(f"Could not read image: {image_path}")
             
             # Resize image
-            image = cv2.resize(image, self.image_size)
+            image = cv2.resize(image, target_size)
             
             # Normalize pixel values
             image = image.astype(np.float32) / 255.0
@@ -60,73 +77,112 @@ class HandwritingService:
             
         except Exception as e:
             raise ValueError(f"Error preprocessing image {image_path}: {str(e)}")
+            
+    def _extract_hog_features(self, image: np.ndarray) -> np.ndarray:
+        """Extract HOG features from image for SVM model"""
+        features, _ = hog(
+            image,
+            orientations=9,
+            pixels_per_cell=(8, 8),
+            cells_per_block=(2, 2),
+            block_norm='L2-Hys',
+            visualize=True,
+            feature_vector=True
+        )
+        return features.reshape(1, -1)
     
     def _load_models(self):
         """Load trained models for spiral and wave drawings"""
         base_dir = Path(__file__).parent.parent.parent.parent  # Go to parkinson-app/
-        models_dir = base_dir / "backend" / "models"
+        models_dir = base_dir / "backend"/ "models" if (base_dir / "backend" / "models").exists() else base_dir / "models"
         
-        # Load spiral model
-        spiral_model_path = models_dir / "resnet50_spiral_best.h5"
-        if spiral_model_path.exists():
-            try:
-                self.spiral_model = tf.keras.models.load_model(str(spiral_model_path))
-                print(f"✅ Loaded spiral ResNet50 model")
-            except Exception as e:
-                print(f"⚠️  Could not load spiral model: {e}")
-                self.spiral_model = None
-        else:
-            print(f"⚠️  Spiral model not found at {spiral_model_path}")
-            self.spiral_model = None
-        
-        # Load wave model
-        wave_model_path = models_dir / "resnet50_wave_best.h5"
-        if wave_model_path.exists():
-            try:
-                self.wave_model = tf.keras.models.load_model(str(wave_model_path))
-                print(f"✅ Loaded wave ResNet50 model")
-            except Exception as e:
-                print(f"⚠️  Could not load wave model: {e}")
-                self.wave_model = None
-        else:
-            print(f"⚠️  Wave model not found at {wave_model_path}")
-            self.wave_model = None
-    
+        if TF_AVAILABLE:
+            # Load CNN models
+            spiral_model_path = models_dir / "resnet50_spiral_best.h5"
+            if spiral_model_path.exists():
+                try:
+                    self.spiral_model = tf.keras.models.load_model(str(spiral_model_path))
+                    print(f"✅ Loaded spiral ResNet50 model")
+                except Exception as e:
+                    print(f"⚠️  Could not load spiral model: {e}")
+            
+            wave_model_path = models_dir / "resnet50_wave_best.h5"
+            if wave_model_path.exists():
+                try:
+                    self.wave_model = tf.keras.models.load_model(str(wave_model_path))
+                    print(f"✅ Loaded wave ResNet50 model")
+                except Exception as e:
+                    print(f"⚠️  Could not load wave model: {e}")
+                    
+        if not TF_AVAILABLE or (not self.spiral_model and not self.wave_model):
+            # Load SVM fallback models
+            if SVM_AVAILABLE:
+                try:
+                    # Look globally in standard places, often models are just at root/models
+                    spiral_svm_path = base_dir / "models" / "spiral_svm_model_svm.pkl"
+                    spiral_scaler_path = base_dir / "models" / "spiral_svm_model_scaler.pkl"
+                    if spiral_svm_path.exists() and spiral_scaler_path.exists():
+                        self.spiral_svm = joblib.load(spiral_svm_path)
+                        self.spiral_scaler = joblib.load(spiral_scaler_path)
+                        print(f"✅ Loaded spiral SVM fallback model")
+                    else:
+                        print(f"⚠️  Spiral SVM model not found at {spiral_svm_path}")
+                        
+                    wave_svm_path = base_dir / "models" / "wave_svm_model_svm.pkl"
+                    wave_scaler_path = base_dir / "models" / "wave_svm_model_scaler.pkl"
+                    if wave_svm_path.exists() and wave_scaler_path.exists():
+                        self.wave_svm = joblib.load(wave_svm_path)
+                        self.wave_scaler = joblib.load(wave_scaler_path)
+                        print(f"✅ Loaded wave SVM fallback model")
+                    else:
+                        print(f"⚠️  Wave SVM model not found at {wave_svm_path}")
+                except Exception as e:
+                    print(f"⚠️  Could not load SVM fallback models: {e}")
+
     def analyze_spiral(self, image_path: str) -> Dict:
         """Analyze spiral drawing"""
-        if not self.spiral_model:
-            return {
-                "success": False,
-                "error": "Spiral model not available",
-                "diagnosis": "Unknown",
-                "probability": 0.5,
-                "confidence": 0.0
-            }
-        
         try:
-            # Preprocess image
-            image = self.preprocess_image(image_path)
-            image = np.expand_dims(image, axis=-1)  # Add channel dimension
-            image = np.expand_dims(image, axis=0)   # Add batch dimension
-            
-            # Make prediction
-            prediction = self.spiral_model.predict(image, verbose=0)[0][0]
-            
-            # Convert to probability and diagnosis
-            probability = float(prediction)
-            diagnosis = "Parkinson's Disease" if probability > 0.5 else "Healthy"
-            confidence = abs(probability - 0.5) * 2  # 0-1 scale
-            
+            if self.spiral_model and TF_AVAILABLE:
+                image = self.preprocess_image(image_path, self.image_size_cnn)
+                image = np.expand_dims(image, axis=-1)
+                image = np.expand_dims(image, axis=0)
+                prediction = self.spiral_model.predict(image, verbose=0)[0][0]
+                probability = float(prediction)
+                diagnosis = "Parkinson's Disease" if probability > 0.5 else "Healthy"
+                confidence = abs(probability - 0.5) * 2
+                
+            elif self.spiral_svm and SVM_AVAILABLE:
+                image = self.preprocess_image(image_path, self.image_size_svm)
+                features = self._extract_hog_features(image)
+                features_scaled = self.spiral_scaler.transform(features)
+                prediction_prob = self.spiral_svm.predict_proba(features_scaled)[0]
+                
+                # Class 1 is Parkinson's in standard SKLearn setup (assumed based on HOG tests)
+                probability = float(prediction_prob[1])
+                diagnosis = "Parkinson's Disease" if probability > 0.5 else "Healthy"
+                confidence = abs(probability - 0.5) * 2
+                
+            else:
+                return {
+                    "success": False,
+                    "error": "No model available for spiral analysis (TensorFlow and SVM models failed to load)",
+                    "diagnosis": "Unknown",
+                    "probability": 0.5,
+                    "confidence": 0.0
+                }
+
             return {
                 "success": True,
                 "diagnosis": diagnosis,
                 "prediction": diagnosis,
                 "probability": probability,
-                "pd_probability": probability,  # Add for multimodal compatibility
+                "pd_probability": probability,
                 "confidence": confidence,
                 "modality": "spiral"
             }
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return {
                 "success": False,
                 "error": str(e),
@@ -135,38 +191,43 @@ class HandwritingService:
                 "confidence": 0.0
             }
     
-    
     def analyze_wave(self, image_path: str) -> Dict:
         """Analyze wave drawing"""
-        if not self.wave_model:
-            return {
-                "success": False,
-                "error": "Wave model not available",
-                "diagnosis": "Unknown",
-                "probability": 0.5,
-                "confidence": 0.0
-            }
-        
         try:
-            # Preprocess image
-            image = self.preprocess_image(image_path)
-            image = np.expand_dims(image, axis=-1)  # Add channel dimension
-            image = np.expand_dims(image, axis=0)   # Add batch dimension
-            
-            # Make prediction
-            prediction = self.wave_model.predict(image, verbose=0)[0][0]
-            
-            # Convert to probability and diagnosis
-            probability = float(prediction)
-            diagnosis = "Parkinson's Disease" if probability > 0.5 else "Healthy"
-            confidence = abs(probability - 0.5) * 2  # 0-1 scale
-            
+            if self.wave_model and TF_AVAILABLE:
+                image = self.preprocess_image(image_path, self.image_size_cnn)
+                image = np.expand_dims(image, axis=-1)
+                image = np.expand_dims(image, axis=0)
+                prediction = self.wave_model.predict(image, verbose=0)[0][0]
+                probability = float(prediction)
+                diagnosis = "Parkinson's Disease" if probability > 0.5 else "Healthy"
+                confidence = abs(probability - 0.5) * 2
+                
+            elif self.wave_svm and SVM_AVAILABLE:
+                image = self.preprocess_image(image_path, self.image_size_svm)
+                features = self._extract_hog_features(image)
+                features_scaled = self.wave_scaler.transform(features)
+                prediction_prob = self.wave_svm.predict_proba(features_scaled)[0]
+                
+                probability = float(prediction_prob[1])
+                diagnosis = "Parkinson's Disease" if probability > 0.5 else "Healthy"
+                confidence = abs(probability - 0.5) * 2
+                
+            else:
+                return {
+                    "success": False,
+                    "error": "No model available for wave analysis",
+                    "diagnosis": "Unknown",
+                    "probability": 0.5,
+                    "confidence": 0.0
+                }
+                
             return {
                 "success": True,
                 "diagnosis": diagnosis,
                 "prediction": diagnosis,
                 "probability": probability,
-                "pd_probability": probability,  # Add for multimodal compatibility
+                "pd_probability": probability,
                 "confidence": confidence,
                 "modality": "wave"
             }
@@ -238,11 +299,14 @@ class HandwritingService:
         Automatically detects if it's a spiral or wave and analyzes accordingly
         If unsure, tries both and returns the combined result
         """
-        # For now, assume it could be either and try to analyze as spiral
-        # In production, you might want to detect the type or require separate uploads
         try:
             # Try analyzing as spiral first
             result = self.analyze_spiral(image_path)
+            
+            # If handwriting analysis actually failed because of missing tools
+            if not result.get("success", False):
+                raise Exception(result.get("error", "Failed to analyze"))
+                
             return result
         except Exception as e:
             return {
