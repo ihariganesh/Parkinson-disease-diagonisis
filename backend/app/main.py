@@ -11,6 +11,7 @@ from app.api.v1.api import api_router
 from app.core.exceptions import AppException
 from app.db.database import engine
 from app.db import models
+from app.db import longitudinal_models  # Longitudinal Neuro-Motor Modeling tables
 
 # Load environment variables
 load_dotenv()

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, patients, doctors, medical_data, analysis, handwriting, doctor, invitation, messages, chatbot, lifestyle_ml
+from app.api.v1.endpoints import auth, patients, doctors, medical_data, analysis, handwriting, doctor, invitation, messages, chatbot, lifestyle_ml, longitudinal
 from app.api.v1 import lifestyle
 
 api_router = APIRouter()
@@ -17,6 +17,7 @@ api_router.include_router(lifestyle.router, tags=["lifestyle"])
 api_router.include_router(lifestyle_ml.router, prefix="/lifestyle-ml", tags=["lifestyle-ml"])
 api_router.include_router(messages.router, prefix="/messages", tags=["messages"])
 api_router.include_router(chatbot.router, prefix="/chatbot", tags=["chatbot"])
+api_router.include_router(longitudinal.router, prefix="/longitudinal", tags=["longitudinal-neuro-motor"])
 
 @api_router.get("/health")
 async def health_check():

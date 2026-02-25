@@ -196,6 +196,18 @@ async def analyze_speech(
             "analysis_type": "speech_parkinson_detection"
         })
         
+        # ── Longitudinal: auto-record voice biomarkers ──
+        try:
+            from app.services.longitudinal_hooks import auto_record_from_analysis
+            auto_record_from_analysis(
+                db=db,
+                patient_id=current_user.id,
+                modality="voice",
+                analysis_result=result.get("analysis_result", result),
+            )
+        except Exception as hook_err:
+            logging.warning(f"Longitudinal hook (voice): {hook_err}")
+        
         return {
             "success": True,
             "message": "Speech analysis completed successfully",
@@ -591,6 +603,18 @@ async def analyze_dat_scan(
         # shutil.rmtree(session_dir)
         
         if result.get('success'):
+            # ── Longitudinal: auto-record DaT scan biomarkers ──
+            try:
+                from app.services.longitudinal_hooks import auto_record_from_analysis
+                auto_record_from_analysis(
+                    db=db,
+                    patient_id=current_user.id,
+                    modality="dat_scan",
+                    analysis_result=result,
+                )
+            except Exception as hook_err:
+                logging.warning(f"Longitudinal hook (dat_scan): {hook_err}")
+            
             return {
                 "success": True,
                 "message": "DaT scan analyzed successfully",

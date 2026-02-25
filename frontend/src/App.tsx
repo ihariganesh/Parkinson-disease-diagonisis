@@ -22,8 +22,7 @@ import DaTAnalysis from "./pages/DaTAnalysis";
 import ComprehensiveAnalysis from "./pages/ComprehensiveAnalysis";
 import ProfilePage from "./pages/ProfilePage";
 import ReportsPage from "./pages/ReportsPage";
-import RecommendationsPage from "./pages/RecommendationsPage";
-// Individual analysis pages kept only for demo routes
+import RecommendationsPage from "./pages/RecommendationsPage";import LongitudinalDashboard from './pages/LongitudinalDashboard';// Individual analysis pages kept only for demo routes
 
 // Component to redirect to appropriate dashboard based on user role
 function DashboardRedirect() {
@@ -130,6 +129,16 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={["patient"]}>
               <RecommendationsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Longitudinal Neuro-Motor Analysis */}
+        <Route
+          path="/longitudinal"
+          element={
+            <ProtectedRoute allowedRoles={["patient", "doctor"]}>
+              <LongitudinalDashboard />
             </ProtectedRoute>
           }
         />

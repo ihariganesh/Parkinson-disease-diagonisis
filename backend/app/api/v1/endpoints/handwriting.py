@@ -364,6 +364,21 @@ async def trigger_analysis(
         db.commit()
         db.refresh(analysis)
         
+        # ── Longitudinal: auto-record handwriting biomarkers ──
+        try:
+            from app.services.longitudinal_hooks import auto_record_from_analysis
+            hw_result = analysis.analysis_details or {}
+            hw_result["confidence_score"] = analysis.confidence_score
+            hw_result["prediction_score"] = analysis.confidence_score
+            auto_record_from_analysis(
+                db=db,
+                patient_id=current_user.id,
+                modality="handwriting",
+                analysis_result=hw_result,
+            )
+        except Exception as hook_err:
+            logger.warning(f"Longitudinal hook (handwriting): {hook_err}")
+        
         return {
             "id": analysis.id,
             "status": "completed",
