@@ -641,17 +641,9 @@ async def analyze_dat_scan(
                 pass  # cannot read: let the model decide
 
         if bright_files:
-            names = ", ".join(
-                f"\'{n}\' (brightness {b}/255)" for n, b in bright_files
-            )
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    f"The following file(s) do not look like DaT brain scan images: {names}. "
-                    "DaT scans have dark backgrounds (mean pixel brightness < 150). "
-                    "White-background drawings or spiral/wave images must be uploaded "
-                    "in the Handwriting / Wave Analysis section."
-                ),
+                detail="Invalid upload: Handwriting/drawings detected. Please upload them in the Handwriting section instead of the DaT Scan section."
             )
 
     except HTTPException:
@@ -853,16 +845,9 @@ async def analyze_comprehensive(
                     pass
 
             if bright_scans:
-                names = ", ".join(
-                    f"'{n}' (brightness {b}/255)" for n, b in bright_scans
-                )
                 raise HTTPException(
                     status_code=400,
-                    detail=(
-                        f"The following DaT Scan file(s) appear to be drawings, not brain scans: {names}. "
-                        "DaT brain scans have dark backgrounds (mean brightness < 150). "
-                        "White-background drawings must be uploaded in the Handwriting / Wave section."
-                    ),
+                    detail="Invalid upload: Handwriting/drawings detected. Please upload them in the Handwriting section instead of the DaT Scan section."
                 )
 
         except HTTPException:
@@ -893,6 +878,8 @@ async def analyze_comprehensive(
                             content = await scan_file.read()
                             f.write(content)
                     dat_scan_paths.append(scan_path)
+                    import os
+                    logging.info(f"[DaT debug] Saved {scan_path.name}, size: {os.path.getsize(scan_path)} bytes")
                 logging.info("[DaT used] %d scan file(s) received and saved", len(dat_scan_paths))
             else:
                 logging.info("[DaT] No DaT scan files provided — DaT module will be skipped.")
