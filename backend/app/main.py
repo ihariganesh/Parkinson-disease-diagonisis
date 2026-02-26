@@ -30,7 +30,7 @@ app = FastAPI(
 # Security middleware
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["localhost", "127.0.0.1", "*.yourdomain.com", "*.ngrok-free.dev", "*.ngrok.io"]
+    allowed_hosts=["*"]  # Allow all hosts for cloud deployment (Render, Vercel, etc.)
 )
 
 # CORS middleware

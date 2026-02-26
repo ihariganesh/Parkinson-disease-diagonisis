@@ -5,8 +5,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_db"
-    DATABASE_TEST_URL: str = "postgresql://parkinson_user:<your_db_password>@localhost:5432/parkinson_test_db"
+    DATABASE_URL: str = "sqlite:///./parkinson_dev.db"
+    DATABASE_TEST_URL: str = "sqlite:///./parkinson_test.db"
     
     # Security
     SECRET_KEY: str = "your-secret-key-here"
@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     ENABLE_GEMINI: bool = False  # Enable Gemini as backup provider
     
     # Environment
-    ENVIRONMENT: str = "development"
-    DEBUG: bool = True
+    ENVIRONMENT: str = "production"
+    DEBUG: bool = False
     
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://localhost:5174"
