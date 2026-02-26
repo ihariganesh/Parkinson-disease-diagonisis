@@ -34,9 +34,9 @@ try:
     ReduceLROnPlateau = tf.keras.callbacks.ReduceLROnPlateau  # type: ignore
     ModelCheckpoint = tf.keras.callbacks.ModelCheckpoint  # type: ignore
     Adam = tf.keras.optimizers.Adam  # type: ignore
-    print("✅ TensorFlow imported successfully")
+    print(" TensorFlow imported successfully")
 except ImportError as e:
-    print(f"❌ TensorFlow import failed: {e}")
+    print(f" TensorFlow import failed: {e}")
     print("Install with: pip install tensorflow>=2.8.0")
     sys.exit(1)
 
@@ -50,7 +50,7 @@ class ParkinsonDetectionModel:
         
     def create_data_generators(self, batch_size=16):
         """Create data generators with proper augmentation"""
-        print("🔄 Creating data generators...")
+        print(" Creating data generators...")
         
         # Training data augmentation (careful with medical images)
         train_datagen = ImageDataGenerator(
@@ -114,7 +114,7 @@ class ParkinsonDetectionModel:
                     'test': test_gen
                 }
                 
-                print(f"✅ {pattern_type.capitalize()} data loaded:")
+                print(f" {pattern_type.capitalize()} data loaded:")
                 print(f"   Training: {train_gen.samples} samples")
                 print(f"   Validation: {val_gen.samples} samples")
                 print(f"   Testing: {test_gen.samples} samples")
@@ -124,7 +124,7 @@ class ParkinsonDetectionModel:
     
     def build_model(self):
         """Build transfer learning model"""
-        print(f"🏗️ Building {self.model_type} model...")
+        print(f" Building {self.model_type} model...")
         
         # Choose base model
         if self.model_type.lower() == 'resnet50':
@@ -167,14 +167,14 @@ class ParkinsonDetectionModel:
         )
         
         self.model = model
-        print(f"✅ Model built successfully")
+        print(f" Model built successfully")
         print(f"   Total parameters: {model.count_params():,}")
         
         return model
     
     def train_model(self, generators, pattern_type, epochs=30):
         """Train the model with early stopping"""
-        print(f"🚀 Training {self.model_type} on {pattern_type} data...")
+        print(f" Training {self.model_type} on {pattern_type} data...")
         
         train_gen = generators[pattern_type]['train']
         val_gen = generators[pattern_type]['validation']
@@ -217,7 +217,7 @@ class ParkinsonDetectionModel:
         self.history = history
         
         # Fine-tuning phase: unfreeze top layers
-        print("🔧 Fine-tuning top layers...")
+        print(" Fine-tuning top layers...")
         base_model = self.model.layers[0]
         base_model.trainable = True
         
@@ -248,12 +248,12 @@ class ParkinsonDetectionModel:
         # Save final model
         self.model.save(f'models/{self.model_type}_{pattern_type}_final.h5')
         
-        print(f"✅ Training completed for {pattern_type}")
+        print(f" Training completed for {pattern_type}")
         return history, history_fine
     
     def evaluate_model(self, generators, pattern_type):
         """Comprehensive model evaluation"""
-        print(f"📊 Evaluating {self.model_type} on {pattern_type} test data...")
+        print(f" Evaluating {self.model_type} on {pattern_type} test data...")
         
         test_gen = generators[pattern_type]['test']
         
@@ -285,7 +285,7 @@ class ParkinsonDetectionModel:
         recall = report['Parkinson']['recall']
         f1_score = report['Parkinson']['f1-score']
         
-        print(f"📈 Test Results for {pattern_type}:")
+        print(f" Test Results for {pattern_type}:")
         print(f"   Accuracy: {accuracy:.4f}")
         print(f"   Precision: {precision:.4f}")
         print(f"   Recall: {recall:.4f}")
@@ -314,7 +314,7 @@ class ParkinsonDetectionModel:
     def plot_training_history(self, pattern_type):
         """Plot training history"""
         if self.history is None:
-            print("❌ No training history available")
+            print(" No training history available")
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
@@ -386,7 +386,7 @@ class ParkinsonDetectionModel:
 
 def main():
     """Main training pipeline"""
-    print("🧠 Starting Parkinson's Disease Detection Training Pipeline")
+    print(" Starting Parkinson's Disease Detection Training Pipeline")
     print("=" * 60)
     
     # Create output directories
@@ -405,7 +405,7 @@ def main():
     results_summary = []
     
     for model_type, pattern_type in models_to_train:
-        print(f"\n🎯 Training {model_type.upper()} for {pattern_type.upper()} detection")
+        print(f"\n Training {model_type.upper()} for {pattern_type.upper()} detection")
         print("-" * 50)
         
         try:
@@ -416,7 +416,7 @@ def main():
             generators = detector.create_data_generators(batch_size=16)
             
             if pattern_type not in generators:
-                print(f"❌ No data found for {pattern_type}")
+                print(f" No data found for {pattern_type}")
                 continue
             
             # Build model
@@ -433,15 +433,15 @@ def main():
             detector.plot_training_history(pattern_type)
             
         except Exception as e:
-            print(f"❌ Error training {model_type} on {pattern_type}: {e}")
+            print(f" Error training {model_type} on {pattern_type}: {e}")
             continue
     
     # Save summary results
     with open('results/training_summary.json', 'w') as f:
         json.dump(results_summary, f, indent=2)
     
-    print("\n🎉 Training pipeline completed!")
-    print("📁 Check the following directories:")
+    print("\n Training pipeline completed!")
+    print(" Check the following directories:")
     print("   - models/ : Trained model files")
     print("   - results/ : Evaluation results")
     print("   - plots/ : Training visualizations")

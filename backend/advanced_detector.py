@@ -19,10 +19,10 @@ try:
     import matplotlib.pyplot as plt  # type: ignore
     import matplotlib.cm as cm  # type: ignore
     TF_AVAILABLE = True
-    print("✅ TensorFlow available for advanced detection")
+    print(" TensorFlow available for advanced detection")
 except ImportError:
     TF_AVAILABLE = False
-    print("⚠️ TensorFlow not available, using fallback detection")
+    print(" TensorFlow not available, using fallback detection")
 
 class AdvancedParkinsonDetector:
     def __init__(self, models_dir="/home/hari/Downloads/parkinson/parkinson-app/backend/models"):
@@ -33,11 +33,11 @@ class AdvancedParkinsonDetector:
         if TF_AVAILABLE:
             self.load_models()
         else:
-            print("⚠️ TensorFlow not available, advanced detection disabled")
+            print(" TensorFlow not available, advanced detection disabled")
     
     def load_models(self):
         """Load all trained models"""
-        print("🔄 Loading trained models...")
+        print(" Loading trained models...")
         
         model_files = {
             'resnet50_spiral': 'resnet50_spiral_final.h5',
@@ -53,16 +53,16 @@ class AdvancedParkinsonDetector:
                 try:
                     model = keras.models.load_model(model_path)
                     self.models[model_name] = model
-                    print(f"✅ Loaded {model_name}")
+                    print(f" Loaded {model_name}")
                 except Exception as e:
-                    print(f"❌ Failed to load {model_name}: {e}")
+                    print(f" Failed to load {model_name}: {e}")
             else:
-                print(f"⚠️ Model file not found: {model_path}")
+                print(f" Model file not found: {model_path}")
         
         if not self.models:
-            print("❌ No models loaded successfully")
+            print(" No models loaded successfully")
         else:
-            print(f"✅ Loaded {len(self.models)} models successfully")
+            print(f" Loaded {len(self.models)} models successfully")
     
     def preprocess_image(self, image_path):
         """Preprocess image for model input"""
@@ -87,7 +87,7 @@ class AdvancedParkinsonDetector:
             return image
             
         except Exception as e:
-            print(f"❌ Error preprocessing image: {e}")
+            print(f" Error preprocessing image: {e}")
             return None
     
     def predict_ensemble(self, image_path, drawing_type):
@@ -108,7 +108,7 @@ class AdvancedParkinsonDetector:
             }
             
             if not relevant_models:
-                print(f"❌ No models available for {drawing_type}")
+                print(f" No models available for {drawing_type}")
                 return self.fallback_prediction(image_path, drawing_type)
             
             predictions = {}
@@ -130,7 +130,7 @@ class AdvancedParkinsonDetector:
                     }
                     
                 except Exception as e:
-                    print(f"❌ Error with model {model_name}: {e}")
+                    print(f" Error with model {model_name}: {e}")
                     continue
             
             if not predictions:
@@ -156,11 +156,11 @@ class AdvancedParkinsonDetector:
                 'timestamp': datetime.now().isoformat()
             }
             
-            print(f"✅ Ensemble prediction: {final_prediction} (confidence: {ensemble_confidence:.2f})")
+            print(f" Ensemble prediction: {final_prediction} (confidence: {ensemble_confidence:.2f})")
             return result
             
         except Exception as e:
-            print(f"❌ Error in ensemble prediction: {e}")
+            print(f" Error in ensemble prediction: {e}")
             return self.fallback_prediction(image_path, drawing_type)
     
     def analyze_image_features(self, image_path, drawing_type):
@@ -359,7 +359,7 @@ class AdvancedParkinsonDetector:
             }
             
         except Exception as e:
-            print(f"❌ Error generating Grad-CAM: {e}")
+            print(f" Error generating Grad-CAM: {e}")
             return None
     
     def fallback_prediction(self, image_path, drawing_type):
@@ -443,7 +443,7 @@ def analyze_handwriting(image_path, drawing_type):
 
 if __name__ == "__main__":
     # Test the detector
-    print("🧠 Testing Advanced Parkinson Detector")
+    print(" Testing Advanced Parkinson Detector")
     
     # Test with a sample image (you can add your test image path here)
     test_image = "/home/hari/Downloads/parkinson/handwritings/drawings/spiral/testing/healthy/V01HE01.png"

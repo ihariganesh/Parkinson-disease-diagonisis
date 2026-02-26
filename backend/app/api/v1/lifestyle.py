@@ -71,7 +71,7 @@ async def generate_lifestyle_recommendations(
                     cache_valid = False
                 
                 if cache_valid:
-                    print(f"✅ Returning cached recommendations for report {report_id}")
+                    print(f" Returning cached recommendations for report {report_id}")
                     return {
                         'success': True,
                         'report_id': report_id,
@@ -172,7 +172,7 @@ async def generate_lifestyle_recommendations(
         )
         db.add(cached_rec)
         db.commit()
-        print(f"✅ Cached recommendations for report {report_id}")
+        print(f" Cached recommendations for report {report_id}")
         
         return {
             'success': True,

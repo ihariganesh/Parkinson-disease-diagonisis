@@ -60,9 +60,9 @@ class DaTScanAnalysisService:
             
             if self.model_path:
                 self.inference_service = get_inference_service(self.model_path)
-                print(f"✅ DaT scan model loaded: {self.model_path}")
+                print(f" DaT scan model loaded: {self.model_path}")
             else:
-                print("⚠️  No DaT scan model found. Please train the model first.")
+                print("  No DaT scan model found. Please train the model first.")
         
         except Exception as e:
             print(f"Error initializing DaT scan service: {e}")
@@ -319,7 +319,7 @@ def main():
         print(f"  {key}: {value}")
     
     if service.is_available():
-        print("\n✅ Service is ready!")
+        print("\n Service is ready!")
         
         # Print model info
         info = service.get_model_info()
@@ -327,7 +327,7 @@ def main():
         for key, value in info.items():
             print(f"  {key}: {value}")
     else:
-        print("\n⚠️  Service not available. Train model first.")
+        print("\n  Service not available. Train model first.")
 
 
 if __name__ == "__main__":

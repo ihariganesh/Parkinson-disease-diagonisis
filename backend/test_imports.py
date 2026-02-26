@@ -8,25 +8,25 @@ print("Testing all imports...")
 try:
     # Basic imports
     import tensorflow as tf
-    print(f"✅ TensorFlow {tf.__version__}")
+    print(f" TensorFlow {tf.__version__}")
     
     import numpy as np
-    print(f"✅ NumPy {np.__version__}")
+    print(f" NumPy {np.__version__}")
     
     import cv2
-    print(f"✅ OpenCV {cv2.__version__}")
+    print(f" OpenCV {cv2.__version__}")
     
     import pandas as pd
-    print(f"✅ Pandas {pd.__version__}")
+    print(f" Pandas {pd.__version__}")
     
     import matplotlib.pyplot as plt
-    print("✅ Matplotlib")
+    print(" Matplotlib")
     
     import seaborn as sns
-    print("✅ Seaborn")
+    print(" Seaborn")
     
     from sklearn.metrics import classification_report
-    print("✅ Scikit-learn")
+    print(" Scikit-learn")
     
     # TensorFlow components
     layers = tf.keras.layers
@@ -42,7 +42,7 @@ try:
     ModelCheckpoint = tf.keras.callbacks.ModelCheckpoint
     Adam = tf.keras.optimizers.Adam
     
-    print("✅ All TensorFlow components imported")
+    print(" All TensorFlow components imported")
     
     # Test creating a simple model
     model = tf.keras.Sequential([
@@ -51,10 +51,10 @@ try:
         Dense(1, activation='sigmoid')
     ])
     
-    print("✅ Model creation test passed")
-    print("\n🎉 All imports working correctly!")
+    print(" Model creation test passed")
+    print("\n All imports working correctly!")
     
 except ImportError as e:
-    print(f"❌ Import error: {e}")
+    print(f" Import error: {e}")
 except Exception as e:
-    print(f"❌ Unexpected error: {e}")
+    print(f" Unexpected error: {e}")

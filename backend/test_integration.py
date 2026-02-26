@@ -8,7 +8,7 @@ import time
 
 def test_backend_auth():
     """Test backend authentication"""
-    print("🔧 Testing Backend Authentication...")
+    print(" Testing Backend Authentication...")
     
     # Test with a new user
     import uuid
@@ -26,9 +26,9 @@ def test_backend_auth():
     try:
         response = requests.post("http://127.0.0.1:8000/api/v1/auth/register", json=register_data)
         if response.status_code != 200:
-            print(f"❌ Registration failed: {response.json()}")
+            print(f" Registration failed: {response.json()}")
             return False
-        print(f"✅ User registered: {test_email}")
+        print(f" User registered: {test_email}")
         
         # Test login
         login_data = {"username": test_email, "password": "testpass123"}
@@ -39,14 +39,14 @@ def test_backend_auth():
         )
         
         if response.status_code != 200:
-            print(f"❌ Login failed: {response.json()}")
+            print(f" Login failed: {response.json()}")
             return False
             
         token_data = response.json()
         token = token_data["access_token"]
         user = token_data["user"]
         
-        print(f"✅ Login successful for: {user['first_name']} {user['last_name']}")
+        print(f" Login successful for: {user['first_name']} {user['last_name']}")
         print(f"   Role: {user['role']}")
         print(f"   Token: {token[:20]}...")
         
@@ -55,16 +55,16 @@ def test_backend_auth():
         response = requests.get("http://127.0.0.1:8000/api/v1/auth/me", headers=headers)
         
         if response.status_code != 200:
-            print(f"❌ /me endpoint failed: {response.json()}")
+            print(f" /me endpoint failed: {response.json()}")
             return False
             
         me_data = response.json()
-        print(f"✅ Profile retrieved: {me_data['email']}")
+        print(f" Profile retrieved: {me_data['email']}")
         
         return True
         
     except Exception as e:
-        print(f"❌ Backend test error: {e}")
+        print(f" Backend test error: {e}")
         return False
 
 def check_frontend_server():
@@ -77,18 +77,18 @@ def check_frontend_server():
 
 def main():
     """Run complete integration test"""
-    print("🚀 Parkinson's Detection App - Integration Test")
+    print(" Parkinson's Detection App - Integration Test")
     print("=" * 60)
     
     # Check backend
     try:
         response = requests.get("http://127.0.0.1:8000/health", timeout=5)
         if response.status_code != 200:
-            print("❌ Backend is not running!")
+            print(" Backend is not running!")
             return
-        print("✅ Backend is running")
+        print(" Backend is running")
     except:
-        print("❌ Backend is not accessible!")
+        print(" Backend is not accessible!")
         return
     
     # Test authentication
@@ -97,41 +97,41 @@ def main():
     # Check frontend
     frontend_running = check_frontend_server()
     if frontend_running:
-        print("✅ Frontend is running")
+        print(" Frontend is running")
     else:
-        print("❌ Frontend is not running")
+        print(" Frontend is not running")
     
     print("\n" + "=" * 60)
-    print("📊 Integration Test Results:")
-    print(f"Backend Health: ✅")
-    print(f"Authentication: {'✅' if auth_ok else '❌'}")
-    print(f"Frontend Server: {'✅' if frontend_running else '❌'}")
+    print(" Integration Test Results:")
+    print(f"Backend Health: ")
+    print(f"Authentication: {'' if auth_ok else ''}")
+    print(f"Frontend Server: {'' if frontend_running else ''}")
     
     if auth_ok:
-        print("\n🎉 Backend authentication is working perfectly!")
-        print("\n📋 What works:")
-        print("✅ User registration (POST /api/v1/auth/register)")
-        print("✅ User login (POST /api/v1/auth/login)")
-        print("✅ JWT token generation")
-        print("✅ Protected endpoints (GET /api/v1/auth/me)")
-        print("✅ SQLite database integration")
+        print("\n Backend authentication is working perfectly!")
+        print("\n What works:")
+        print(" User registration (POST /api/v1/auth/register)")
+        print(" User login (POST /api/v1/auth/login)")
+        print(" JWT token generation")
+        print(" Protected endpoints (GET /api/v1/auth/me)")
+        print(" SQLite database integration")
         
         if frontend_running:
-            print("\n🌐 Both servers are running:")
-            print("• Frontend: http://localhost:5173")
-            print("• Backend: http://127.0.0.1:8000")
-            print("• API Docs: http://127.0.0.1:8000/docs")
+            print("\n Both servers are running:")
+            print(" Frontend: http://localhost:5173")
+            print(" Backend: http://127.0.0.1:8000")
+            print(" API Docs: http://127.0.0.1:8000/docs")
             
-            print("\n🧪 Test the full flow:")
+            print("\n Test the full flow:")
             print("1. Open: http://localhost:5173/register")
             print("2. Register a new account")
             print("3. Login with your credentials")
             print("4. Check the network tab for API calls")
         else:
-            print("\n⚠️ Frontend server is not running")
+            print("\n Frontend server is not running")
             print("Start it with: npm run dev (in frontend directory)")
     else:
-        print("\n❌ Authentication issues detected. Check the logs above.")
+        print("\n Authentication issues detected. Check the logs above.")
 
 if __name__ == "__main__":
     main()

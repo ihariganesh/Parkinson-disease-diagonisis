@@ -23,10 +23,10 @@ def create_tables():
     print("Creating database tables...")
     try:
         Base.metadata.create_all(bind=engine)
-        print("✅ Database tables created successfully!")
+        print(" Database tables created successfully!")
         return True
     except Exception as e:
-        print(f"❌ Error creating tables: {e}")
+        print(f" Error creating tables: {e}")
         return False
 
 
@@ -43,7 +43,7 @@ def seed_sample_data():
     try:
         # Check if data already exists
         if db.query(User).first():
-            print("📊 Sample data already exists, skipping...")
+            print(" Sample data already exists, skipping...")
             return True
             
         print("Seeding sample data...")
@@ -76,17 +76,17 @@ def seed_sample_data():
             db.add(user)
         
         db.commit()
-        print("✅ Sample data seeded successfully!")
+        print(" Sample data seeded successfully!")
         
         # Print login credentials
-        print("\n🔑 Sample Login Credentials:")
+        print("\n Sample Login Credentials:")
         print("Doctor: doctor@example.com / doctor123")
         print("Patient: patient@example.com / patient123")
         
         return True
         
     except Exception as e:
-        print(f"❌ Error seeding data: {e}")
+        print(f" Error seeding data: {e}")
         db.rollback()
         return False
     finally:
@@ -95,7 +95,7 @@ def seed_sample_data():
 
 def main():
     """Main function to initialize the database"""
-    print("🏥 Parkinson's Detection App - Database Setup")
+    print(" Parkinson's Detection App - Database Setup")
     print("=" * 50)
     
     print(f"Database URL: {settings.DATABASE_URL}")
@@ -116,7 +116,7 @@ def main():
         else:
             print("Please enter 'y' or 'n'")
     
-    print("\n🎉 Database setup completed!")
+    print("\n Database setup completed!")
     print("You can now start the FastAPI server with: uvicorn app.main:app --reload")
 
 

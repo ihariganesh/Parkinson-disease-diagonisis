@@ -15,7 +15,7 @@ try:
     from .simple_speech_predictor import get_predictor
     SIMPLE_PREDICTOR_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️  Simple predictor not available: {e}")
+    print(f"  Simple predictor not available: {e}")
     SIMPLE_PREDICTOR_AVAILABLE = False
     get_predictor = None
 
@@ -24,7 +24,7 @@ try:
     from .audio_feature_extractor import ParkinsonVoiceFeatureExtractor
     FEATURE_EXTRACTOR_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️  Feature extractor not available: {e}")
+    print(f"  Feature extractor not available: {e}")
     FEATURE_EXTRACTOR_AVAILABLE = False
     ParkinsonVoiceFeatureExtractor = None
 
@@ -41,9 +41,9 @@ class SpeechService:
         if FEATURE_EXTRACTOR_AVAILABLE and ParkinsonVoiceFeatureExtractor:
             try:
                 self.feature_extractor = ParkinsonVoiceFeatureExtractor()
-                print("✅ Audio feature extractor initialized")
+                print(" Audio feature extractor initialized")
             except Exception as e:
-                print(f"⚠️  Could not initialize feature extractor: {e}")
+                print(f"  Could not initialize feature extractor: {e}")
                 self.feature_extractor = None
         
         if SIMPLE_PREDICTOR_AVAILABLE and get_predictor:
@@ -53,14 +53,14 @@ class SpeechService:
                 self.predictor = get_predictor(str(models_dir))
                 
                 if self.predictor.is_available():
-                    print("✅ Speech analysis service initialized with trained model")
+                    print(" Speech analysis service initialized with trained model")
                 else:
-                    print("⚠️  Speech model not loaded - using baseline estimates")
+                    print("  Speech model not loaded - using baseline estimates")
             except Exception as e:
-                print(f"⚠️  Could not initialize speech predictor: {e}")
+                print(f"  Could not initialize speech predictor: {e}")
                 self.predictor = None
         else:
-            print("⚠️  Speech analysis service not available")
+            print("  Speech analysis service not available")
     
     def analyze_voice(self, audio_path: str) -> Dict:
         """
@@ -85,13 +85,13 @@ class SpeechService:
         try:
             # Extract real features from audio file
             if self.feature_extractor:
-                print(f"🎵 Extracting features from audio file...")
+                print(f" Extracting features from audio file...")
                 features = self.feature_extractor.extract_features(audio_path)
-                print(f"✓ Extracted {len(features)} features")
+                print(f" Extracted {len(features)} features")
                 feature_note = "Real acoustic features extracted"
             else:
                 # Fallback to mock features if extractor not available
-                print("⚠️  Feature extractor not available, using mock features")
+                print("  Feature extractor not available, using mock features")
                 np.random.seed(hash(audio_path) % 2**32)  # Deterministic per file
                 features = np.random.randn(754) * 0.5  # Normalized distribution
                 feature_note = "Using simulated features (extractor not available)"
@@ -105,7 +105,7 @@ class SpeechService:
             return result
             
         except Exception as e:
-            print(f"⚠️  Speech analysis error: {e}")
+            print(f"  Speech analysis error: {e}")
             import traceback
             traceback.print_exc()
             return {

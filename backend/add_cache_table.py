@@ -21,7 +21,7 @@ def add_cache_table():
         """)
         
         if cursor.fetchone():
-            print("✅ cached_recommendations table already exists")
+            print(" cached_recommendations table already exists")
         else:
             # Create cached_recommendations table
             cursor.execute("""
@@ -43,22 +43,22 @@ def add_cache_table():
             """)
             
             conn.commit()
-            print("✅ Successfully created cached_recommendations table")
+            print(" Successfully created cached_recommendations table")
         
         # Show table info
         cursor.execute("PRAGMA table_info(cached_recommendations)")
         columns = cursor.fetchall()
-        print(f"\n📋 cached_recommendations table has {len(columns)} columns:")
+        print(f"\n cached_recommendations table has {len(columns)} columns:")
         for col in columns:
             print(f"  - {col[1]} ({col[2]})")
         
         conn.close()
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f" Error: {e}")
         raise
 
 if __name__ == "__main__":
-    print("🔧 Adding cached_recommendations table...")
+    print(" Adding cached_recommendations table...")
     add_cache_table()
-    print("\n✅ Migration complete!")
+    print("\n Migration complete!")

@@ -52,20 +52,20 @@ def create_age_group(age: int) -> str:
 
 def train_model():
     print("=" * 60)
-    print("🏋️ Lifestyle Recommendation Model Training (12K Dataset)")
+    print(" Lifestyle Recommendation Model Training (12K Dataset)")
     print("=" * 60)
 
     # --- Load dataset ---
-    print(f"\n📂 Loading dataset from: {DATASET_PATH}")
+    print(f"\n Loading dataset from: {DATASET_PATH}")
     if not os.path.exists(DATASET_PATH):
-        print(f"❌ Dataset not found at {DATASET_PATH}")
+        print(f" Dataset not found at {DATASET_PATH}")
         sys.exit(1)
 
     df = pd.read_csv(DATASET_PATH)
     print(f"   Loaded {len(df)} records with columns: {list(df.columns)}")
 
     # --- Preprocess ---
-    print("\n🔧 Preprocessing data...")
+    print("\n Preprocessing data...")
 
     # Handle missing previous_condition (1736 nulls -> label as 'None')
     df["previous_condition"] = df["previous_condition"].fillna("None")
@@ -79,7 +79,7 @@ def train_model():
     df["age_group"] = df["age"].apply(create_age_group)
 
     # --- Encode categorical features ---
-    print("\n🏷️ Encoding features...")
+    print("\n Encoding features...")
     
     # Feature columns (including parkinson_status and parkinson_stage)
     categorical_features = ["gender", "age_group", "city", "state", "previous_condition"]
@@ -124,12 +124,12 @@ def train_model():
 
     y = df[encoded_target_cols].values
 
-    print(f"\n📊 Feature matrix: {X.shape} ({len(feature_names)} features)")
+    print(f"\n Feature matrix: {X.shape} ({len(feature_names)} features)")
     print(f"   Features: {feature_names}")
     print(f"   Target matrix: {y.shape}")
 
     # --- Parkinson distribution ---
-    print(f"\n📈 Parkinson Distribution:")
+    print(f"\n Parkinson Distribution:")
     print(f"   Status 0 (No PD): {(df['parkinson_status']==0).sum()}")
     print(f"   Status 1 (Has PD): {(df['parkinson_status']==1).sum()}")
     print(f"   Stage 0: {(df['parkinson_stage']==0).sum()}")
@@ -144,7 +144,7 @@ def train_model():
     print(f"\n   Train: {X_train.shape[0]}, Test: {X_test.shape[0]}")
 
     # --- Train ---
-    print("\n🚀 Training Random Forest Multi-Output Classifier...")
+    print("\n Training Random Forest Multi-Output Classifier...")
     base_clf = RandomForestClassifier(
         n_estimators=250,
         max_depth=25,
@@ -155,10 +155,10 @@ def train_model():
     )
     model = MultiOutputClassifier(base_clf)
     model.fit(X_train, y_train)
-    print("   ✅ Training complete!")
+    print("    Training complete!")
 
     # --- Evaluate ---
-    print("\n📈 Evaluating model...")
+    print("\n Evaluating model...")
     y_pred = model.predict(X_test)
 
     for i, col in enumerate(target_columns):
@@ -169,16 +169,16 @@ def train_model():
         accuracy_score(y_test[:, i], y_pred[:, i])
         for i in range(len(target_columns))
     ])
-    print(f"\n   🎯 Overall Average Accuracy: {overall_acc:.4f}")
+    print(f"\n    Overall Average Accuracy: {overall_acc:.4f}")
 
     # --- Save model ---
     os.makedirs(MODEL_DIR, exist_ok=True)
 
-    print(f"\n💾 Saving model to: {MODEL_PATH}")
+    print(f"\n Saving model to: {MODEL_PATH}")
     with open(MODEL_PATH, "wb") as f:
         pickle.dump(model, f)
 
-    print(f"💾 Saving encoders to: {ENCODERS_PATH}")
+    print(f" Saving encoders to: {ENCODERS_PATH}")
     with open(ENCODERS_PATH, "wb") as f:
         pickle.dump(encoders, f)
 
@@ -220,10 +220,10 @@ def train_model():
 
     with open(METADATA_PATH, "w") as f:
         json.dump(metadata, f, indent=2)
-    print(f"💾 Saving metadata to: {METADATA_PATH}")
+    print(f" Saving metadata to: {METADATA_PATH}")
 
     print("\n" + "=" * 60)
-    print("✅ MODEL TRAINING COMPLETE")
+    print(" MODEL TRAINING COMPLETE")
     print(f"   Dataset: 12,000 records")
     print(f"   Model: {MODEL_PATH}")
     print(f"   Overall Accuracy: {overall_acc:.2%}")

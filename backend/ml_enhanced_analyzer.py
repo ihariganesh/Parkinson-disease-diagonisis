@@ -21,10 +21,10 @@ try:
     import tensorflow as tf
     from PIL import Image
     ML_AVAILABLE = True
-    print("✅ Advanced ML libraries available (TensorFlow, NumPy, OpenCV, PIL)")
+    print(" Advanced ML libraries available (TensorFlow, NumPy, OpenCV, PIL)")
 except ImportError as e:
     ML_AVAILABLE = False
-    print(f"⚠️ Advanced ML libraries not available: {e}")
+    print(f" Advanced ML libraries not available: {e}")
 
 class MLEnhancedHandwritingAnalyzer:
     """ML-Enhanced analyzer using trained ResNet50 models with computer vision fallback"""
@@ -51,12 +51,12 @@ class MLEnhancedHandwritingAnalyzer:
                 if os.path.exists(model_path):
                     model = tf.keras.models.load_model(model_path)
                     self.trained_models[pattern_type] = model
-                    print(f"✅ Loaded {pattern_type} ResNet50 model")
+                    print(f" Loaded {pattern_type} ResNet50 model")
                 else:
-                    print(f"⚠️ Model not found: {model_path}")
+                    print(f" Model not found: {model_path}")
                     
         except Exception as e:
-            print(f"❌ Error loading trained models: {e}")
+            print(f" Error loading trained models: {e}")
             self.trained_models = {}
     
     def preprocess_image_for_ml(self, image_path: str) -> Optional[np.ndarray]:
@@ -120,17 +120,17 @@ class MLEnhancedHandwritingAnalyzer:
     def analyze_handwriting(self, image_path: str, drawing_type: str = "spiral") -> Dict[str, Any]:
         """Main analysis function with ML model priority"""
         
-        print(f"🔍 Analyzing {drawing_type} pattern: {os.path.basename(image_path)}")
+        print(f" Analyzing {drawing_type} pattern: {os.path.basename(image_path)}")
         
         # Try ML model first
         ml_result = self.predict_with_ml_model(image_path, drawing_type)
         
         if ml_result:
-            print(f"✅ ML Analysis complete: {ml_result['prediction']} (confidence: {ml_result['confidence']:.2f})")
+            print(f" ML Analysis complete: {ml_result['prediction']} (confidence: {ml_result['confidence']:.2f})")
             return self._create_ml_result(ml_result, image_path, drawing_type)
         
         # Fallback to computer vision analysis
-        print("⚠️ Using computer vision fallback")
+        print(" Using computer vision fallback")
         return self._analyze_with_computer_vision(image_path, drawing_type)
     
     def _create_ml_result(self, ml_result: Dict, image_path: str, drawing_type: str) -> Dict[str, Any]:
@@ -176,7 +176,7 @@ class MLEnhancedHandwritingAnalyzer:
             prediction = "Healthy" if health_score > 0.5 else "Parkinson"
             confidence = 0.6 + (abs(0.5 - health_score) * 0.3)
             
-            print(f"✅ CV Analysis complete: {prediction} (confidence: {confidence:.2f})")
+            print(f" CV Analysis complete: {prediction} (confidence: {confidence:.2f})")
             
             return {
                 'prediction': prediction,

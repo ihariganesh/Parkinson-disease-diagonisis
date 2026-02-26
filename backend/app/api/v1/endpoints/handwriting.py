@@ -26,26 +26,26 @@ try:
     from ml_enhanced_analyzer import get_analyzer
     ADVANCED_DETECTOR = get_analyzer()
     ANALYZER_TYPE = "ml_enhanced"
-    print("🧠 ML-Enhanced analyzer loaded with trained ResNet50 models")
+    print(" ML-Enhanced analyzer loaded with trained ResNet50 models")
 except ImportError as e:
-    print(f"⚠️ ML-Enhanced analyzer not available: {e}")
+    print(f" ML-Enhanced analyzer not available: {e}")
     try:
         # Fallback to enhanced analyzer
         from enhanced_analyzer import get_analyzer
         ADVANCED_DETECTOR = get_analyzer()
         ANALYZER_TYPE = "enhanced"
-        print("✅ Enhanced computer vision analyzer loaded")
+        print(" Enhanced computer vision analyzer loaded")
     except ImportError as e2:
-        print(f"⚠️ Enhanced analyzer not available: {e2}")
+        print(f" Enhanced analyzer not available: {e2}")
         try:
             # Try advanced models
             sys.path.append(str(project_root / "ml-models"))
             from advanced_detector import AdvancedParkinsonsDetector
             ADVANCED_DETECTOR = AdvancedParkinsonsDetector()
             ANALYZER_TYPE = "advanced"
-            print(f"✓ Advanced transfer learning models loaded: {list(ADVANCED_DETECTOR.models.keys())}")
+            print(f" Advanced transfer learning models loaded: {list(ADVANCED_DETECTOR.models.keys())}")
         except ImportError as e3:
-            print(f"⚠️  Advanced models not available: {e3}")
+            print(f"  Advanced models not available: {e3}")
             # Create a basic fallback analyzer
             class BasicFallbackAnalyzer:
                 def analyze_handwriting(self, image_path, drawing_type="spiral"):
@@ -96,7 +96,7 @@ except ImportError as e:
             
             ADVANCED_DETECTOR = BasicFallbackAnalyzer()
             ANALYZER_TYPE = "basic_fallback"
-            print("✓ Basic fallback analyzer created")
+            print(" Basic fallback analyzer created")
 
 logger = logging.getLogger(__name__)
 

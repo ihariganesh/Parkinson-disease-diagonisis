@@ -246,7 +246,7 @@ class ParkinsonVoiceFeatureExtractor:
         for i in range(1, 37):
             self.feature_names.append(f'tqwt_kurtosisValue_dec_{i}')
         
-        print(f"✓ Loaded {len(self.feature_names)} feature names")
+        print(f" Loaded {len(self.feature_names)} feature names")
     
     def extract_features(self, audio_path, patient_id=0, gender=0):
         """
@@ -275,23 +275,23 @@ class ParkinsonVoiceFeatureExtractor:
             if len(y) < 1000:  # Too short (< 0.05 seconds)
                 raise ValueError(f"Audio too short: {len(y)} samples")
             
-            print(f"✓ Loaded audio: {len(y)} samples at {sr} Hz ({len(y)/sr:.2f} seconds)")
+            print(f" Loaded audio: {len(y)} samples at {sr} Hz ({len(y)/sr:.2f} seconds)")
             
         except Exception as e:
-            print(f"⚠️ Error loading audio: {e}")
+            print(f" Error loading audio: {e}")
             
             # If conversion was attempted, try loading original file
             if converted_path != audio_path:
-                print(f"🔄 Trying to load original file directly...")
+                print(f" Trying to load original file directly...")
                 try:
                     y, sr = librosa.load(audio_path, sr=self.sr, duration=30.0,
                                        res_type='kaiser_fast')
                     if len(y) >= 1000:
-                        print(f"✓ Loaded original: {len(y)} samples at {sr} Hz")
+                        print(f" Loaded original: {len(y)} samples at {sr} Hz")
                     else:
                         raise ValueError("Audio too short")
                 except Exception as e2:
-                    print(f"❌ Failed to load original too: {e2}")
+                    print(f" Failed to load original too: {e2}")
                     return self._get_all_default_features(patient_id, gender)
             else:
                 # Return default features if audio loading fails
@@ -316,7 +316,7 @@ class ParkinsonVoiceFeatureExtractor:
         try:
             # Use fast mode for Praat features to speed up extraction
             if FAST_MODE:
-                print("   ⚡ Using fast mode (simplified features)")
+                print("    Using fast mode (simplified features)")
                 praat_features = self._extract_praat_features_fast(y, sr)
             else:
                 # Full Praat extraction with timeout
@@ -324,9 +324,9 @@ class ParkinsonVoiceFeatureExtractor:
                     converted_path if converted_path != audio_path else audio_path
                 )
             features.update(praat_features)
-            print("   ✓ Praat features extracted")
+            print("    Praat features extracted")
         except Exception as e:
-            print(f"   ⚠️ Praat features extraction failed: {str(e)[:50]}, using defaults")
+            print(f"    Praat features extraction failed: {str(e)[:50]}, using defaults")
             # Use fallback values
             features.update(self._get_default_praat_features())
         
@@ -335,9 +335,9 @@ class ParkinsonVoiceFeatureExtractor:
             # Extract MFCC features
             mfcc_features = self._extract_mfcc_features(y, sr)
             features.update(mfcc_features)
-            print("   ✓ MFCC features extracted")
+            print("    MFCC features extracted")
         except Exception as e:
-            print(f"   ⚠️ MFCC extraction failed: {str(e)[:50]}")
+            print(f"    MFCC extraction failed: {str(e)[:50]}")
             features.update(self._get_default_mfcc_features())
         
         print("   [3/4] Extracting wavelet features...")
@@ -345,9 +345,9 @@ class ParkinsonVoiceFeatureExtractor:
             # Extract wavelet features
             wavelet_features = self._extract_wavelet_features(y)
             features.update(wavelet_features)
-            print("   ✓ Wavelet features extracted")
+            print("    Wavelet features extracted")
         except Exception as e:
-            print(f"   ⚠️ Wavelet extraction failed: {str(e)[:50]}")
+            print(f"    Wavelet extraction failed: {str(e)[:50]}")
             features.update(self._get_default_wavelet_features())
         
         print("   [4/4] Extracting TQWT features...")
@@ -355,15 +355,15 @@ class ParkinsonVoiceFeatureExtractor:
             # Extract TQWT features
             tqwt_features = self._extract_tqwt_features(y)
             features.update(tqwt_features)
-            print("   ✓ TQWT features extracted")
+            print("    TQWT features extracted")
         except Exception as e:
-            print(f"   ⚠️ TQWT extraction failed: {str(e)[:50]}")
+            print(f"    TQWT extraction failed: {str(e)[:50]}")
             features.update(self._get_default_tqwt_features())
         
         # Convert to numpy array in correct order
         feature_vector = np.array([features[name] for name in self.feature_names])
         
-        print(f"✅ Successfully extracted all {len(feature_vector)} features")
+        print(f" Successfully extracted all {len(feature_vector)} features")
         return feature_vector
     
     def _ensure_wav_format(self, audio_path):
@@ -384,7 +384,7 @@ class ParkinsonVoiceFeatureExtractor:
         
         # If MP3, convert to WAV
         if path.suffix.lower() == '.mp3':
-            print(f"🔄 Converting MP3 to WAV to avoid decoding issues...")
+            print(f" Converting MP3 to WAV to avoid decoding issues...")
             
             # Create temporary WAV file
             temp_wav = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
@@ -406,25 +406,25 @@ class ParkinsonVoiceFeatureExtractor:
                 
                 # Verify the output file exists and has content
                 if os.path.exists(temp_wav_path) and os.path.getsize(temp_wav_path) > 1000:
-                    print(f"✓ Converted to WAV: {temp_wav_path}")
+                    print(f" Converted to WAV: {temp_wav_path}")
                     return temp_wav_path
                 else:
-                    print("⚠️ Converted file is empty or too small - trying direct load")
+                    print(" Converted file is empty or too small - trying direct load")
                     os.unlink(temp_wav_path)
                     return audio_path
                 
             except subprocess.TimeoutExpired:
-                print("⚠️ MP3 conversion timeout - using original file")
+                print(" MP3 conversion timeout - using original file")
                 if os.path.exists(temp_wav_path):
                     os.unlink(temp_wav_path)
                 return audio_path
             except subprocess.CalledProcessError as e:
-                print(f"⚠️ ffmpeg conversion failed: {e} - trying librosa direct load")
+                print(f" ffmpeg conversion failed: {e} - trying librosa direct load")
                 if os.path.exists(temp_wav_path):
                     os.unlink(temp_wav_path)
                 return audio_path
             except FileNotFoundError:
-                print("⚠️ ffmpeg not found - using librosa (may be slow)")
+                print(" ffmpeg not found - using librosa (may be slow)")
                 if os.path.exists(temp_wav_path):
                     os.unlink(temp_wav_path)
                 return audio_path
@@ -501,7 +501,7 @@ class ParkinsonVoiceFeatureExtractor:
             try:
                 return future.result(timeout=PRAAT_TIMEOUT)
             except FutureTimeoutError:
-                print(f"   ⏱️ Praat extraction timeout ({PRAAT_TIMEOUT}s), using fast mode")
+                print(f"    Praat extraction timeout ({PRAAT_TIMEOUT}s), using fast mode")
                 # Load audio and use fast mode
                 y, sr = librosa.load(audio_path, sr=self.sr, duration=30.0)
                 return self._extract_praat_features_fast(y, sr)
@@ -517,7 +517,7 @@ class ParkinsonVoiceFeatureExtractor:
         features.update(self._get_default_tqwt_features())
         
         feature_vector = np.array([features[name] for name in self.feature_names])
-        print(f"⚠️ Using {len(feature_vector)} default features due to extraction failure")
+        print(f" Using {len(feature_vector)} default features due to extraction failure")
         return feature_vector
     
     def _extract_praat_features(self, audio_path):
@@ -1028,11 +1028,11 @@ if __name__ == "__main__":
     
     try:
         features = extractor.extract_features(audio_path)
-        print(f"\n✓ Successfully extracted {len(features)} features!")
+        print(f"\n Successfully extracted {len(features)} features!")
         print(f"Feature vector shape: {features.shape}")
         print(f"First 10 features: {features[:10]}")
         print(f"Last 10 features: {features[-10:]}")
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\n Error: {e}")
         import traceback
         traceback.print_exc()

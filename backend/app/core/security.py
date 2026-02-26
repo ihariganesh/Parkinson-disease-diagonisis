@@ -10,7 +10,7 @@ from app.db.database import get_db
 
 # Use only PBKDF2 to avoid bcrypt compatibility issues
 # Note: This will require existing users to reset their passwords
-print("🔐 Using PBKDF2 password hashing (bcrypt disabled for compatibility)")
+print("Using PBKDF2 password hashing (bcrypt disabled for compatibility)")
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 ALGORITHM = "HS256"

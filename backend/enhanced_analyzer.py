@@ -14,26 +14,26 @@ from pathlib import Path
 try:
     import cv2
     CV2_AVAILABLE = True
-    print("✅ OpenCV available for image processing")
+    print(" OpenCV available for image processing")
 except ImportError:
     CV2_AVAILABLE = False
-    print("⚠️ OpenCV not available, using basic analysis")
+    print(" OpenCV not available, using basic analysis")
 
 try:
     from PIL import Image, ImageFilter, ImageOps
     PIL_AVAILABLE = True
-    print("✅ PIL available for image processing")
+    print(" PIL available for image processing")
 except ImportError:
     PIL_AVAILABLE = False
-    print("⚠️ PIL not available")
+    print(" PIL not available")
 
 try:
     import numpy as np
     NUMPY_AVAILABLE = True
-    print("✅ NumPy available for numerical processing")
+    print(" NumPy available for numerical processing")
 except ImportError:
     NUMPY_AVAILABLE = False
-    print("⚠️ NumPy not available, using basic math")
+    print(" NumPy not available, using basic math")
 
 class EnhancedHandwritingAnalyzer:
     """Enhanced analyzer using traditional computer vision and image processing"""
@@ -47,7 +47,7 @@ class EnhancedHandwritingAnalyzer:
     
     def load_reference_patterns(self):
         """Load and analyze reference patterns from the dataset"""
-        print("🔄 Loading reference patterns...")
+        print(" Loading reference patterns...")
         
         patterns = {
             'spiral': {'healthy': [], 'parkinson': []},
@@ -70,10 +70,10 @@ class EnhancedHandwritingAnalyzer:
                                     patterns[pattern_type][condition].append(features)
             
             self.reference_patterns = patterns
-            print(f"✅ Loaded reference patterns")
+            print(f" Loaded reference patterns")
             
         except Exception as e:
-            print(f"⚠️ Could not load reference patterns: {e}")
+            print(f" Could not load reference patterns: {e}")
             self.reference_patterns = patterns
     
     def extract_image_features(self, image_path):
@@ -98,7 +98,7 @@ class EnhancedHandwritingAnalyzer:
             return features
             
         except Exception as e:
-            print(f"⚠️ Error extracting features from {image_path}: {e}")
+            print(f" Error extracting features from {image_path}: {e}")
             return features
     
     def extract_pil_features(self, image_path):
@@ -158,7 +158,7 @@ class EnhancedHandwritingAnalyzer:
                 features['texture_complexity'] = texture_diff / 255.0
                 
         except Exception as e:
-            print(f"⚠️ PIL feature extraction error: {e}")
+            print(f" PIL feature extraction error: {e}")
         
         return features
     
@@ -215,7 +215,7 @@ class EnhancedHandwritingAnalyzer:
                 features['texture_variance'] = float(np.var(laplacian))
             
         except Exception as e:
-            print(f"⚠️ OpenCV feature extraction error: {e}")
+            print(f" OpenCV feature extraction error: {e}")
         
         return features
     
@@ -248,7 +248,7 @@ class EnhancedHandwritingAnalyzer:
                 features['complexity_hint'] = 'medium'
                 
         except Exception as e:
-            print(f"⚠️ Basic feature extraction error: {e}")
+            print(f" Basic feature extraction error: {e}")
         
         return features
     
@@ -292,7 +292,7 @@ class EnhancedHandwritingAnalyzer:
                 confidence += 0.1
             
         except Exception as e:
-            print(f"⚠️ Spiral analysis error: {e}")
+            print(f" Spiral analysis error: {e}")
         
         # Clamp values
         spiral_score = max(0.0, min(1.0, spiral_score))
@@ -337,7 +337,7 @@ class EnhancedHandwritingAnalyzer:
                 confidence += 0.1
             
         except Exception as e:
-            print(f"⚠️ Wave analysis error: {e}")
+            print(f" Wave analysis error: {e}")
         
         # Clamp values
         wave_score = max(0.0, min(1.0, wave_score))
@@ -380,7 +380,7 @@ class EnhancedHandwritingAnalyzer:
                 return 0.5 + (avg_healthy_dist - avg_parkinson_dist) * 0.5
             
         except Exception as e:
-            print(f"⚠️ Reference comparison error: {e}")
+            print(f" Reference comparison error: {e}")
             return 0.5
     
     def calculate_feature_distance(self, features1, features2, key_features):
@@ -401,7 +401,7 @@ class EnhancedHandwritingAnalyzer:
     def analyze_handwriting(self, image_path, drawing_type="spiral"):
         """Main analysis function"""
         
-        print(f"🔍 Analyzing {drawing_type} pattern: {os.path.basename(image_path)}")
+        print(f" Analyzing {drawing_type} pattern: {os.path.basename(image_path)}")
         
         # Extract features
         features = self.extract_image_features(image_path)
@@ -444,7 +444,7 @@ class EnhancedHandwritingAnalyzer:
         if NUMPY_AVAILABLE:
             result['analysis_details']['libraries_used'].append('NumPy')
         
-        print(f"✅ Analysis complete: {prediction} (confidence: {confidence:.2f})")
+        print(f" Analysis complete: {prediction} (confidence: {confidence:.2f})")
         
         return result
     
@@ -560,7 +560,7 @@ def get_analyzer():
 
 if __name__ == "__main__":
     # Test the analyzer
-    print("🧠 Testing Enhanced Handwriting Analyzer")
+    print(" Testing Enhanced Handwriting Analyzer")
     
     analyzer = get_analyzer()
     
@@ -575,7 +575,7 @@ if __name__ == "__main__":
             files = [f for f in os.listdir(test_dir) if f.endswith(('.png', '.jpg'))]
             if files:
                 test_file = os.path.join(test_dir, files[0])
-                print(f"\n📊 Testing with: {test_file}")
+                print(f"\n Testing with: {test_file}")
                 result = analyzer.analyze_handwriting(test_file, "spiral")
                 print(json.dumps(result, indent=2))
                 break

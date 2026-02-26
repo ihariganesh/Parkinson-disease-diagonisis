@@ -39,11 +39,11 @@ class MultiProviderAIService:
                         'deepseek/deepseek-r1:free',
                     ]
                 })
-                print(f"✅ OpenRouter initialized (PRIMARY PROVIDER) with key: {or_key[:12]}...***")
+                print(f" OpenRouter initialized (PRIMARY PROVIDER) with key: {or_key[:12]}...***")
             except Exception as e:
-                print(f"⚠️ Failed to initialize OpenRouter: {e}")
+                print(f" Failed to initialize OpenRouter: {e}")
         else:
-            print("⚠️ OPENROUTER_API_KEY not found - OpenRouter provider unavailable")
+            print(" OPENROUTER_API_KEY not found - OpenRouter provider unavailable")
         
         # Groq as secondary provider
         groq_key = os.getenv('GROQ_API_KEY', '')
@@ -57,11 +57,11 @@ class MultiProviderAIService:
                     'type': 'groq',
                     'models': ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768']
                 })
-                print(f"✅ Groq AI initialized (SECONDARY PROVIDER) with key: {groq_key[:20]}...***")
+                print(f" Groq AI initialized (SECONDARY PROVIDER) with key: {groq_key[:20]}...***")
             except Exception as e:
-                print(f"⚠️ Failed to initialize Groq: {e}")
+                print(f" Failed to initialize Groq: {e}")
         else:
-            print("⚠️ GROQ_API_KEY not found - Groq provider unavailable")
+            print(" GROQ_API_KEY not found - Groq provider unavailable")
         
         # Gemini as backup only (disabled by default unless ENABLE_GEMINI=true)
         enable_gemini = os.getenv('ENABLE_GEMINI', 'false').lower() == 'true'
@@ -83,19 +83,19 @@ class MultiProviderAIService:
                                 'api_key': key,
                                 'models': ['gemini-2.0-flash-exp']
                             })
-                            print(f"✅ Gemini AI #{i+1} initialized as backup")
+                            print(f" Gemini AI #{i+1} initialized as backup")
                         except Exception as e:
-                            print(f"⚠️ Failed to initialize Gemini key #{i+1}: {str(e)[:100]}")
+                            print(f" Failed to initialize Gemini key #{i+1}: {str(e)[:100]}")
                 except Exception as e:
-                    print(f"⚠️ Failed to initialize Gemini: {e}")
+                    print(f" Failed to initialize Gemini: {e}")
         else:
-            print("ℹ️ Gemini disabled (set ENABLE_GEMINI=true to enable)")
+            print(" Gemini disabled (set ENABLE_GEMINI=true to enable)")
         
         if not self.providers:
-            print("❌ No AI providers available - will use fallback recommendations")
+            print(" No AI providers available - will use fallback recommendations")
         else:
             primary = self.providers[0]['name'] if self.providers else 'None'
-            print(f"✅ Initialized {len(self.providers)} AI provider(s) - Primary: {primary}")
+            print(f" Initialized {len(self.providers)} AI provider(s) - Primary: {primary}")
     
     async def generate_recommendations(
         self,
@@ -124,7 +124,7 @@ class MultiProviderAIService:
         # Try each provider in order
         for provider in self.providers:
             try:
-                print(f"🔄 Trying provider: {provider['name']}")
+                print(f" Trying provider: {provider['name']}")
                 
                 if provider['type'] == 'openrouter':
                     response = await self._generate_with_openrouter(provider, prompt)
@@ -153,12 +153,12 @@ class MultiProviderAIService:
                     'stage': stage
                 }
                 
-                print(f"✅ Successfully generated recommendations with {provider['name']}")
+                print(f" Successfully generated recommendations with {provider['name']}")
                 return recommendations
                 
             except Exception as e:
                 error_str = str(e).lower()
-                print(f"❌ {provider['name']} failed: {str(e)[:150]}")
+                print(f" {provider['name']} failed: {str(e)[:150]}")
                 
                 # Check if quota/rate limit error
                 if any(word in error_str for word in ['quota', 'rate limit', '429', 'exceeded']):
@@ -169,7 +169,7 @@ class MultiProviderAIService:
                     continue
         
         # All providers failed - use fallback
-        print("⚠️ All AI providers failed - using fallback recommendations")
+        print(" All AI providers failed - using fallback recommendations")
         return self._get_fallback_recommendations(diagnosis, age)
     
     async def _generate_with_openrouter(self, provider: Dict[str, Any], prompt: str) -> str:
@@ -208,7 +208,7 @@ class MultiProviderAIService:
                         }
                     }
                     
-                    print(f"🔄 Calling OpenRouter API (model={current_model})...")
+                    print(f" Calling OpenRouter API (model={current_model})...")
                     response = await client.post(
                         provider['base_url'],
                         headers=headers,
@@ -236,11 +236,11 @@ class MultiProviderAIService:
                     if not content:
                         raise Exception(f"OpenRouter model {current_model} returned empty response")
                     
-                    print(f"✅ OpenRouter response received from {current_model} ({len(content)} chars)")
+                    print(f" OpenRouter response received from {current_model} ({len(content)} chars)")
                     return content
                     
                 except Exception as e:
-                    print(f"⚠️ OpenRouter model {current_model} failed: {e}")
+                    print(f" OpenRouter model {current_model} failed: {e}")
                     last_error = e
                     continue
                     

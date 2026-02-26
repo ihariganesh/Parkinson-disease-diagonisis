@@ -34,7 +34,7 @@ const DaTAnalysis: React.FC = () => {
     if (!selectedFiles) return;
 
     const fileArray = Array.from(selectedFiles);
-    const imageFiles = fileArray.filter(file => 
+    const imageFiles = fileArray.filter(file =>
       file.type.startsWith('image/')
     );
 
@@ -84,7 +84,7 @@ const DaTAnalysis: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileChange(e.dataTransfer.files);
     }
@@ -114,7 +114,7 @@ const DaTAnalysis: React.FC = () => {
 
     try {
       const token = localStorage.getItem('auth_token'); // Fixed: use 'auth_token' instead of 'token'
-      
+
       if (!token) {
         setError('Authentication required. Please login first.');
         setUploading(false);
@@ -139,7 +139,7 @@ const DaTAnalysis: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Analysis error:', err);
-      
+
       if (err.response?.status === 401) {
         setError('Authentication failed. Please login to continue.');
         // Optionally redirect to login after a delay
@@ -148,7 +148,7 @@ const DaTAnalysis: React.FC = () => {
         }, 2000);
       } else {
         setError(
-          err.response?.data?.detail || 
+          err.response?.data?.detail ||
           err.response?.data?.message ||
           'Failed to analyze scans. Please try again.'
         );
@@ -174,8 +174,8 @@ const DaTAnalysis: React.FC = () => {
 
   // Get prediction color
   const getPredictionColor = (prediction: string) => {
-    return prediction.toLowerCase() === 'healthy' 
-      ? 'text-green-600' 
+    return prediction.toLowerCase() === 'healthy'
+      ? 'text-green-600'
       : 'text-red-600';
   };
 
@@ -197,14 +197,13 @@ const DaTAnalysis: React.FC = () => {
           {/* Upload Section */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Upload Scan Images</h2>
-            
+
             {/* Drop Zone */}
             <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                dragActive 
-                  ? 'border-indigo-500 bg-indigo-50' 
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
+                  ? 'border-indigo-500 bg-indigo-50'
                   : 'border-gray-300 hover:border-indigo-400'
-              }`}
+                }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -227,10 +226,22 @@ const DaTAnalysis: React.FC = () => {
                   Drop files here or click to browse
                 </p>
                 <p className="text-sm text-gray-500">
-                  Support: PNG, JPG, JPEG (Max 20 files)
+                  Support: PNG, JPG, JPEG (Min 5, Max 20 files)
                 </p>
               </label>
             </div>
+
+            {/* Error Message for < 5 files */}
+            {files.length > 0 && files.length < 5 && (
+              <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-orange-800">
+                  You have selected <strong>{files.length}</strong> file{files.length > 1 ? 's' : ''}.
+                  DaT Scan requires at least <strong>5 brain scan slices</strong>.
+                  If you have a handwriting/spiral drawing, please use the Handwriting Analysis page instead.
+                </p>
+              </div>
+            )}
 
             {/* File Previews */}
             {files.length > 0 && (
@@ -264,12 +275,11 @@ const DaTAnalysis: React.FC = () => {
             {/* Analyze Button */}
             <button
               onClick={handleAnalyze}
-              disabled={files.length === 0 || uploading}
-              className={`w-full mt-6 py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
-                files.length === 0 || uploading
+              disabled={files.length < 5 || uploading}
+              className={`w-full mt-6 py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${files.length < 5 || uploading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-indigo-600 text-white hover:bg-indigo-700'
-              }`}
+                }`}
             >
               {uploading ? (
                 <>
@@ -279,7 +289,7 @@ const DaTAnalysis: React.FC = () => {
               ) : (
                 <>
                   <Brain className="w-5 h-5" />
-                  Analyze Scans
+                  {files.length < 5 ? `Upload at least 5 slices to Analyze` : 'Analyze Scans'}
                 </>
               )}
             </button>
@@ -296,7 +306,7 @@ const DaTAnalysis: React.FC = () => {
           {/* Results Section */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Analysis Results</h2>
-            
+
             {!result && !uploading && (
               <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                 <FileImage className="w-16 h-16 mb-4" />
@@ -323,7 +333,7 @@ const DaTAnalysis: React.FC = () => {
                       {result.prediction}
                     </span>
                   </div>
-                  
+
                   {/* Confidence */}
                   <div className="mb-3">
                     <div className="flex justify-between text-sm mb-1">

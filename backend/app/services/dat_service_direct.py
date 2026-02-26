@@ -17,7 +17,7 @@ except ImportError:
     tf = None
     keras = None
     TF_AVAILABLE = False
-    print("⚠️  TensorFlow not available - DaT ML model disabled")
+    print("  TensorFlow not available - DaT ML model disabled")
 
 try:
     import cv2
@@ -25,7 +25,7 @@ try:
 except ImportError:
     cv2 = None
     CV2_AVAILABLE = False
-    print("⚠️  OpenCV not available - DaT image processing limited")
+    print("  OpenCV not available - DaT image processing limited")
 
 # Add ml_models to path
 ml_models_path = Path(__file__).parent.parent.parent / "ml_models"
@@ -53,14 +53,14 @@ class DaTScanAnalysisServiceDirect:
         model_dir = base_dir / "models" / "dat_scan"
         
         if not model_dir.exists():
-            print(f"⚠️  Model directory not found: {model_dir}")
+            print(f"  Model directory not found: {model_dir}")
             return
         
         # Find latest model
         model_files = sorted(model_dir.glob("dat_model_*.keras"))
         
         if not model_files:
-            print(f"⚠️  No model files found in {model_dir}")
+            print(f"  No model files found in {model_dir}")
             return
         
         self.model_path = str(model_files[-1])
@@ -81,11 +81,11 @@ class DaTScanAnalysisServiceDirect:
                     custom_objects={'GrayscaleToRGBLayer': GrayscaleToRGBLayer}
                 )
             except ImportError as ie:
-                print(f"⚠️  Could not import GrayscaleToRGBLayer: {ie}")
-                print("⚠️  Trying without custom objects")
+                print(f"  Could not import GrayscaleToRGBLayer: {ie}")
+                print("  Trying without custom objects")
                 self.model = keras.models.load_model(self.model_path)
             
-            print(f"✅ Model loaded successfully!")
+            print(f" Model loaded successfully!")
         except Exception as e:
             # Model loading failed - details not logged
             self.model = None
@@ -215,9 +215,9 @@ class DaTScanAnalysisServiceDirect:
                     prediction_proba = 0.7 * prediction_proba + 0.3 * float(model_proba)
                 except Exception as e:
                     # If model prediction fails, use pure feature-based
-                    print(f"⚠️  Model prediction failed, using feature-based: {e}")
+                    print(f"  Model prediction failed, using feature-based: {e}")
             else:
-                print("ℹ️  Using feature-based analysis (model not loaded)")
+                print("  Using feature-based analysis (model not loaded)")
             
             prediction_class = int(prediction_proba > self.threshold)
             prediction_label = self.class_names[prediction_class]
@@ -272,9 +272,12 @@ class DaTScanAnalysisServiceDirect:
             return result
             
         except Exception as e:
+            import traceback
+            print(f"DaT Scan Predict Error: {e}")
+            traceback.print_exc()
             return {
                 'success': False,
-                'error': 'Analysis failed',
+                'error': f'Analysis failed: {str(e)}',
                 'timestamp': datetime.now().isoformat()
             }
     

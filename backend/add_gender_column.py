@@ -19,27 +19,27 @@ def add_gender_column():
         columns = [column[1] for column in cursor.fetchall()]
         
         if 'gender' in columns:
-            print("✅ Gender column already exists")
+            print(" Gender column already exists")
         else:
             # Add gender column
             cursor.execute("ALTER TABLE users ADD COLUMN gender VARCHAR")
             conn.commit()
-            print("✅ Successfully added gender column to users table")
+            print(" Successfully added gender column to users table")
         
         # Verify the change
         cursor.execute("PRAGMA table_info(users)")
         columns = cursor.fetchall()
-        print(f"\n📋 Users table now has {len(columns)} columns:")
+        print(f"\n Users table now has {len(columns)} columns:")
         for col in columns:
             print(f"  - {col[1]} ({col[2]})")
         
         conn.close()
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f" Error: {e}")
         raise
 
 if __name__ == "__main__":
-    print("🔧 Adding gender column to database...")
+    print(" Adding gender column to database...")
     add_gender_column()
-    print("\n✅ Migration complete!")
+    print("\n Migration complete!")

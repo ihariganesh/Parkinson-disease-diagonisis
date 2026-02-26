@@ -1,0 +1,92 @@
+﻿python : 2026-02-25 
+16:06:08.649440: I tensorflo
+w/core/util/port.cc:153] 
+oneDNN custom operations 
+are on. You may see 
+slightly different 
+numerical results due to 
+floating-point round-off 
+errors from different 
+computation orders. To turn 
+them off, set the 
+environment variable 
+`TF_ENABLE_ONEDNN_OPTS=0`.
+At line:1 char:110
++ ... NG="utf-8"; python -c 
+"from app.main import app; 
+print('SUCCESS: app  ...
++                 ~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: (2026-  
+  02-25 16:0...ONEDNN_OPT   
+ S=0`.:String) [], Remot    
+eException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+2026-02-25 16:06:13.991878: 
+I tensorflow/core/util/port.
+cc:153] oneDNN custom 
+operations are on. You may 
+see slightly different 
+numerical results due to 
+floating-point round-off 
+errors from different 
+computation orders. To turn 
+them off, set the 
+environment variable 
+`TF_ENABLE_ONEDNN_OPTS=0`.
+ERROR:speech_analysis_servic
+e_v2:Γ¥î Error initializing 
+feature stats: [WinError 
+32] The process cannot 
+access the file because it 
+is being used by another 
+process: 'C:\\Users\\dhana\\
+AppData\\Local\\Temp\\tmpf2k
+rp1vh.wav'
+ERROR:speech_analysis_servic
+e_v2:Γ¥î Error initializing 
+feature stats: [WinError 
+32] The process cannot 
+access the file because it 
+is being used by another 
+process: 'C:\\Users\\dhana\\
+AppData\\Local\\Temp\\tmptb9
+g3qi1.wav'
+INFO:root:Γ£ô Using 
+enhanced speech analysis 
+service v2
+INFO:root:Γ£ô DaT scan 
+analysis service loaded 
+successfully
+WARNING:root:MRI analysis 
+service file not found at D:
+\clg\project\parkinson\Parki
+nson-disease-diagonisis\ml-m
+odels\mri_analysis_service.p
+y
+INFO:root:Γ£ô Multi-modal 
+analysis service initialized
+≡ƒöÉ Using PBKDF2 password hashing (bcrypt disabled for compatibility)
+ΓÜá∩╕Å  Warning: parselmouth not available. Install with: pip install praat-parselmouth
+   Some speech features will be estimated using alternative methods.
+Extracting features from: C:\Users\dhana\AppData\Local\Temp\tmpf2krp1vh.wav
+Error in alternative feature extraction: No librosa.util attribute smooth
+Extracted 144 features
+Extracting features from: C:\Users\dhana\AppData\Local\Temp\tmptb9g3qi1.wav
+Error in alternative feature extraction: No librosa.util attribute smooth
+Extracted 144 features
+ΓÜá∩╕Å  No model files found in D:\clg\project\parkinson\Parkinson-disease-diagonisis\models\dat_scan
+ΓÜá∩╕Å  skimage or joblib not available - SVM fallback disabled: No module named 'skimage'
+ΓÜá∩╕Å  Feature extractor not available: No module named 'parselmouth'
+ΓÜá∩╕Å  No model files found in D:\clg\project\parkinson\Parkinson-disease-diagonisis\models\dat_scan
+ΓÜá∩╕Å  Speech RF model files not found
+ΓÜá∩╕Å  Speech model not loaded - using baseline estimates
+Γ£à Advanced ML libraries available (TensorFlow, NumPy, OpenCV, PIL)
+ΓÜá∩╕Å Model not found: /home/hari/Downloads/parkinson/parkinson-app/backend/models\resnet50_spiral_final.h5
+ΓÜá∩╕Å Model not found: /home/hari/Downloads/parkinson/parkinson-app/backend/models\resnet50_wave_final.h5
+≡ƒºá ML-Enhanced analyzer loaded with trained ResNet50 models
+SUCCESS: app loaded

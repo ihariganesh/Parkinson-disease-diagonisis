@@ -30,7 +30,7 @@ class LifestylePredictor:
         """Load trained model, encoders, and metadata."""
         try:
             if not os.path.exists(MODEL_PATH):
-                print(f"⚠️ Lifestyle model not found at {MODEL_PATH}")
+                print(f" Lifestyle model not found at {MODEL_PATH}")
                 return
 
             with open(MODEL_PATH, "rb") as f:
@@ -42,9 +42,9 @@ class LifestylePredictor:
             with open(METADATA_PATH, "r") as f:
                 self.metadata = json.load(f)
 
-            print("✅ Lifestyle recommendation model loaded (12K dataset)")
+            print(" Lifestyle recommendation model loaded (12K dataset)")
         except Exception as e:
-            print(f"❌ Error loading lifestyle model: {e}")
+            print(f" Error loading lifestyle model: {e}")
             self.model = None
 
     def is_ready(self) -> bool:
@@ -72,7 +72,7 @@ class LifestylePredictor:
         lower_map = {c.lower(): c for c in encoder.classes_}
         if value.lower() in lower_map:
             return int(encoder.transform([lower_map[value.lower()]])[0])
-        print(f"⚠️ Unknown value '{value}' for {encoder_name}, using default '{encoder.classes_[0]}'")
+        print(f" Unknown value '{value}' for {encoder_name}, using default '{encoder.classes_[0]}'")
         return 0
 
     def _extract_location(self, address: str) -> Dict[str, str]:
@@ -249,7 +249,7 @@ class LifestylePredictor:
             }
 
         except Exception as e:
-            print(f"❌ Prediction error: {e}")
+            print(f" Prediction error: {e}")
             import traceback
             traceback.print_exc()
             return self._get_fallback(gender, age, previous_condition, parkinson_status, parkinson_stage)

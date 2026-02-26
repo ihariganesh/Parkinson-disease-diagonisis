@@ -26,13 +26,13 @@ class GeminiLifestyleService:
         self.current_key_index = 0
         
         if not self.api_keys:
-            print("❌ GEMINI_API_KEY not found in environment variables")
-            print("💡 Set GEMINI_API_KEY in .env file or pass as parameter")
+            print(" GEMINI_API_KEY not found in environment variables")
+            print(" Set GEMINI_API_KEY in .env file or pass as parameter")
             self.model = None
             self.api_available = False
             return
         
-        print(f"🔑 Found {len(self.api_keys)} API key(s)")
+        print(f" Found {len(self.api_keys)} API key(s)")
         self.api_available = True
         self._initialize_model()
     
@@ -44,7 +44,7 @@ class GeminiLifestyleService:
         
         self.api_key = self.api_keys[self.current_key_index]
         genai.configure(api_key=self.api_key)
-        print(f"🔑 Using Gemini API key #{self.current_key_index + 1}: {self.api_key[:20]}...***")
+        print(f" Using Gemini API key #{self.current_key_index + 1}: {self.api_key[:20]}...***")
         
         # Try multiple model versions
         model_options = [
@@ -57,13 +57,13 @@ class GeminiLifestyleService:
         for model_name in model_options:
             try:
                 self.model = genai.GenerativeModel(model_name)
-                print(f"✅ Gemini AI initialized with {model_name}")
+                print(f" Gemini AI initialized with {model_name}")
                 return
             except Exception as e:
-                print(f"⚠️ Failed to load {model_name}: {str(e)[:100]}")
+                print(f" Failed to load {model_name}: {str(e)[:100]}")
                 continue
         
-        print("❌ Failed to initialize any Gemini model")
+        print(" Failed to initialize any Gemini model")
         self.model = None
     
     def _rotate_api_key(self) -> bool:
@@ -72,7 +72,7 @@ class GeminiLifestyleService:
             return False
         
         self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
-        print(f"🔄 Rotating to API key #{self.current_key_index + 1}")
+        print(f" Rotating to API key #{self.current_key_index + 1}")
         self._initialize_model()
         return True
     
@@ -113,7 +113,7 @@ class GeminiLifestyleService:
         while attempt < max_retries:
             try:
                 if self.model is None:
-                    print("❌ Gemini model not initialized")
+                    print(" Gemini model not initialized")
                     return self._get_fallback_recommendations(diagnosis, age)
                 
                 # Build comprehensive prompt with demographics
@@ -141,7 +141,7 @@ class GeminiLifestyleService:
                 
             except Exception as e:
                 error_str = str(e).lower()
-                print(f"❌ Gemini API error (attempt {attempt + 1}/{max_retries}): {str(e)[:200]}")
+                print(f" Gemini API error (attempt {attempt + 1}/{max_retries}): {str(e)[:200]}")
                 
                 # Check if it's a quota/rate limit error
                 is_quota_error = any(keyword in error_str for keyword in [
@@ -152,12 +152,12 @@ class GeminiLifestyleService:
                 if is_quota_error and attempt < max_retries - 1:
                     # Try rotating to next API key
                     if self._rotate_api_key():
-                        print("🔄 Retrying with next API key...")
+                        print(" Retrying with next API key...")
                         attempt += 1
                         continue
                 
                 # If not quota error or no more keys, use fallback
-                print(f"⚠️ Using fallback recommendations due to: {str(e)[:100]}")
+                print(f" Using fallback recommendations due to: {str(e)[:100]}")
                 return self._get_fallback_recommendations(diagnosis, age)
         
         try:
@@ -179,7 +179,7 @@ class GeminiLifestyleService:
             return recommendations
             
         except Exception as e:
-            print(f"❌ Final error generating recommendations: {e}")
+            print(f" Final error generating recommendations: {e}")
             return self._get_fallback_recommendations(diagnosis, age)
     
     def _build_prompt(

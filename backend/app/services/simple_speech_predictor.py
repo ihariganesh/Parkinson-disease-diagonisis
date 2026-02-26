@@ -38,17 +38,17 @@ class SimpleSpeechPredictor:
             scaler_path = self.models_dir / "speech_rf_scaler.pkl"
             
             if not model_path.exists() or not scaler_path.exists():
-                print("⚠️  Speech RF model files not found")
+                print("  Speech RF model files not found")
                 return
             
             self.model = joblib.load(model_path)
             self.scaler = joblib.load(scaler_path)
             
             self.is_loaded = True
-            print(f"✅ Speech RF model loaded successfully!")
+            print(f" Speech RF model loaded successfully!")
             
         except Exception as e:
-            print(f"⚠️  Error loading speech RF model: {e}")
+            print(f"  Error loading speech RF model: {e}")
             self.is_loaded = False
     
     def predict_from_features(self, features: np.ndarray) -> Dict:
@@ -118,7 +118,7 @@ class SimpleSpeechPredictor:
         except Exception as e:
             import traceback
             traceback.print_exc()
-            print(f"⚠️  Prediction error: {e}")
+            print(f"  Prediction error: {e}")
             return {
                 "success": False,
                 "error": str(e),

@@ -8,7 +8,7 @@ BASE_URL = "http://127.0.0.1:8000/api/v1"
 
 def test_register():
     """Test user registration"""
-    print("🧪 Testing user registration...")
+    print(" Testing user registration...")
     
     user_data = {
         "email": "testuser@example.com",
@@ -24,19 +24,19 @@ def test_register():
         print(f"Response: {response.json()}")
         
         if response.status_code == 200:
-            print("✅ Registration successful!")
+            print(" Registration successful!")
             return True
         else:
-            print(f"❌ Registration failed: {response.json()}")
+            print(f" Registration failed: {response.json()}")
             return False
             
     except Exception as e:
-        print(f"❌ Registration error: {e}")
+        print(f" Registration error: {e}")
         return False
 
 def test_login():
     """Test user login"""
-    print("\n🧪 Testing user login...")
+    print("\n Testing user login...")
     
     # Use form data for OAuth2PasswordRequestForm
     login_data = {
@@ -55,19 +55,19 @@ def test_login():
         
         if response.status_code == 200:
             data = response.json()
-            print("✅ Login successful!")
+            print(" Login successful!")
             return data.get("access_token")
         else:
-            print(f"❌ Login failed: {response.json()}")
+            print(f" Login failed: {response.json()}")
             return None
             
     except Exception as e:
-        print(f"❌ Login error: {e}")
+        print(f" Login error: {e}")
         return None
 
 def test_me_endpoint(token):
     """Test current user endpoint"""
-    print("\n🧪 Testing /me endpoint...")
+    print("\n Testing /me endpoint...")
     
     headers = {"Authorization": f"Bearer {token}"}
     
@@ -77,19 +77,19 @@ def test_me_endpoint(token):
         print(f"Response: {response.json()}")
         
         if response.status_code == 200:
-            print("✅ Me endpoint successful!")
+            print(" Me endpoint successful!")
             return True
         else:
-            print(f"❌ Me endpoint failed: {response.json()}")
+            print(f" Me endpoint failed: {response.json()}")
             return False
             
     except Exception as e:
-        print(f"❌ Me endpoint error: {e}")
+        print(f" Me endpoint error: {e}")
         return False
 
 def test_health_check():
     """Test API health"""
-    print("\n🧪 Testing API health...")
+    print("\n Testing API health...")
     
     try:
         response = requests.get(f"{BASE_URL}/health")
@@ -97,25 +97,25 @@ def test_health_check():
         print(f"Response: {response.json()}")
         
         if response.status_code == 200:
-            print("✅ API health check passed!")
+            print(" API health check passed!")
             return True
         else:
-            print(f"❌ API health check failed")
+            print(f" API health check failed")
             return False
             
     except Exception as e:
-        print(f"❌ API health check error: {e}")
+        print(f" API health check error: {e}")
         return False
 
 def main():
     """Run all authentication tests"""
-    print("🚀 Testing Parkinson's Detection API Authentication")
+    print(" Testing Parkinson's Detection API Authentication")
     print("=" * 60)
     
     # Test API health first
     health_ok = test_health_check()
     if not health_ok:
-        print("❌ API is not healthy, stopping tests")
+        print(" API is not healthy, stopping tests")
         return
     
     # Test registration
@@ -131,20 +131,20 @@ def main():
         me_ok = False
     
     print("\n" + "=" * 60)
-    print("📊 Test Results:")
-    print(f"Health Check: {'✅' if health_ok else '❌'}")
-    print(f"Registration: {'✅' if register_ok else '❌'}")
-    print(f"Login: {'✅' if token else '❌'}")
-    print(f"Me Endpoint: {'✅' if token and me_ok else '❌'}")
+    print(" Test Results:")
+    print(f"Health Check: {'' if health_ok else ''}")
+    print(f"Registration: {'' if register_ok else ''}")
+    print(f"Login: {'' if token else ''}")
+    print(f"Me Endpoint: {'' if token and me_ok else ''}")
     
     if health_ok and register_ok and token and me_ok:
-        print("\n🎉 All authentication tests passed!")
-        print("\n✨ Frontend can now connect to:")
+        print("\n All authentication tests passed!")
+        print("\n Frontend can now connect to:")
         print("- Register: POST /api/v1/auth/register")
         print("- Login: POST /api/v1/auth/login (form data)")
         print("- Profile: GET /api/v1/auth/me (with Bearer token)")
     else:
-        print("\n❌ Some tests failed. Check the issues above.")
+        print("\n Some tests failed. Check the issues above.")
 
 if __name__ == "__main__":
     main()

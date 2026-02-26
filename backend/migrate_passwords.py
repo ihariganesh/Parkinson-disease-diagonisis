@@ -30,12 +30,12 @@ def migrate_passwords():
                 user.hashed_password = get_password_hash(default_password)
                 
         db.commit()
-        print(f"✅ Successfully migrated {len(users)} users")
-        print("📝 All affected users now have a new password set. ")
+        print(f" Successfully migrated {len(users)} users")
+        print(" All affected users now have a new password set. ")
         print("    Communicate the reset procedure securely (e.g. email reset flow).")
         
     except Exception as e:
-        print(f"❌ Migration failed: {e}")
+        print(f" Migration failed: {e}")
         db.rollback()
     finally:
         db.close()

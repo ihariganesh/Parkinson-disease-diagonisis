@@ -20,21 +20,21 @@ def migrate_patient_ids():
             with engine.connect() as conn:
                 conn.execute(text("ALTER TABLE users ADD COLUMN patient_id VARCHAR"))
                 conn.commit()
-                print("✅ Added patient_id column to users table")
+                print(" Added patient_id column to users table")
         except Exception as e:
             if "duplicate column" in str(e).lower() or "already exists" in str(e).lower():
-                print("ℹ️  patient_id column already exists")
+                print("  patient_id column already exists")
             else:
-                print(f"⚠️  Error adding column: {e}")
+                print(f"  Error adding column: {e}")
         
         # Create unique index if it doesn't exist
         try:
             with engine.connect() as conn:
                 conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_patient_id ON users(patient_id)"))
                 conn.commit()
-                print("✅ Created unique index on patient_id")
+                print(" Created unique index on patient_id")
         except Exception as e:
-            print(f"⚠️  Index creation note: {e}")
+            print(f"  Index creation note: {e}")
         
         # Get all patients without patient_id
         patients_without_id = db.query(User).filter(
@@ -57,11 +57,11 @@ def migrate_patient_ids():
             print(f"   Assigned {patient_id} to {patient.first_name} {patient.last_name} ({patient.email})")
         
         db.commit()
-        print(f"\n✅ Successfully assigned patient IDs to {len(patients_without_id)} patients")
+        print(f"\n Successfully assigned patient IDs to {len(patients_without_id)} patients")
         
         # Display all patients with their IDs
         all_patients = db.query(User).filter(User.role == UserRole.PATIENT).all()
-        print(f"\n📋 All Patients ({len(all_patients)} total):")
+        print(f"\n All Patients ({len(all_patients)} total):")
         print("-" * 80)
         for patient in all_patients:
             print(f"   {patient.patient_id or 'NO-ID':<12} | {patient.first_name} {patient.last_name:<20} | {patient.email}")
@@ -69,7 +69,7 @@ def migrate_patient_ids():
         
     except Exception as e:
         db.rollback()
-        print(f"❌ Error during migration: {e}")
+        print(f" Error during migration: {e}")
         import traceback
         traceback.print_exc()
     finally:

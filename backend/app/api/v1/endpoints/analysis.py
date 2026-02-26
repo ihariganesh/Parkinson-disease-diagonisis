@@ -313,13 +313,13 @@ async def demo_analyze_speech(
         )
     
     # Debug logging for demo endpoint
-    print(f"🔍 Demo endpoint - Received file: '{file.filename}'")
-    print(f"🔍 Demo endpoint - File content type: '{file.content_type}'")
-    print(f"🔍 Demo endpoint - Filename ends with mp3? {file.filename.lower().endswith('.mp3') if file.filename else 'No filename'}")
+    print(f" Demo endpoint - Received file: '{file.filename}'")
+    print(f" Demo endpoint - File content type: '{file.content_type}'")
+    print(f" Demo endpoint - Filename ends with mp3? {file.filename.lower().endswith('.mp3') if file.filename else 'No filename'}")
     
     # Validate file type
     if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.flac', '.ogg')):
-        print(f"❌ Demo endpoint - File validation failed for: '{file.filename}'")
+        print(f" Demo endpoint - File validation failed for: '{file.filename}'")
         raise HTTPException(
             status_code=400,
             detail="Invalid file format. Please upload an audio file (WAV, MP3, M4A, FLAC, or OGG)."
@@ -547,63 +547,145 @@ async def analyze_dat_scan(
     db: Session = Depends(get_db)
 ):
     """
-    Analyze DaT scan (multiple slices) for Parkinson's disease detection
-    Accepts multiple image files representing scan slices
+    Analyze DaT scan (multiple slices) for Parkinson's disease detection.
+    Strict multi-layer validation prevents non-scan images (spiral/wave drawings)
+    from being processed here.
     """
-    
+
     if not DAT_ANALYSIS_AVAILABLE:
         raise HTTPException(
             status_code=503,
             detail="DaT scan analysis service is not available. Model may not be trained yet."
         )
-    
-    # Validate we have at least one file
+
+    # ── Layer 1: Minimum / maximum file count ─────────────────────────────────
+    DAT_SCAN_MIN = 5
+    DAT_SCAN_MAX = 20
+
     if not files:
         raise HTTPException(
             status_code=400,
             detail="No files uploaded. Please upload DaT scan slices."
         )
-    
-    # Validate file types
-    valid_extensions = ('.png', '.jpg', '.jpeg', '.dcm')
+
+    if len(files) < DAT_SCAN_MIN:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"DaT Scan requires at least {DAT_SCAN_MIN} brain scan slice images "
+                f"(you uploaded {len(files)}). "
+                "Real DaT sessions have 10-20 slices. "
+                "Spiral/wave drawings must be uploaded in the Handwriting/Wave section."
+            ),
+        )
+
+    if len(files) > DAT_SCAN_MAX:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Too many files. Maximum {DAT_SCAN_MAX} DaT scan slices allowed.",
+        )
+
+    # ── Layer 2: File extension check ─────────────────────────────────────────
+    valid_extensions = (".png", ".jpg", ".jpeg", ".dcm")
     for file in files:
         if not file.filename.lower().endswith(valid_extensions):
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid file format for {file.filename}. Please upload image files (PNG, JPG, JPEG, or DICOM)."
+                detail=(
+                    f"Invalid file format for '{file.filename}'. "
+                    "Please upload PNG, JPG, JPEG, or DICOM images."
+                ),
             )
-    
+
+    # ── Layer 3: Filename keyword blacklist ───────────────────────────────────
+    # Handwriting/drawing images routinely carry these words in their names.
+    HANDWRITING_KEYWORDS = [
+        "spiral", "wave", "drawing", "handwriting", "hw_",
+        "sketch", "trace", "pattern", "pen", "pencil",
+    ]
+    for file in files:
+        name_lower = file.filename.lower()
+        matched = [kw for kw in HANDWRITING_KEYWORDS if kw in name_lower]
+        if matched:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"File \'{file.filename}\' appears to be a handwriting/drawing image "
+                    f"(detected keyword: \'{matched[0]}\'). "
+                    "DaT Scan only accepts brain scan images. "
+                    "Upload spiral/wave drawings in the Handwriting / Wave Analysis section."
+                ),
+            )
+
+    # ── Layer 4: Pixel-brightness content check ───────────────────────────────
+    # DaT brain scans → dark background → mean brightness < 150
+    # Spiral/wave drawings → white/light background → mean brightness >= 150
+    file_contents: dict[str, bytes] = {}   # cache so we don't read twice
     try:
-        # Create upload directory if it doesn't exist
-        upload_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../uploads/dat_scans"))
+        from PIL import Image
+        import numpy as np
+        import io as _io
+
+        BRIGHTNESS_THRESHOLD = 150
+        bright_files = []
+
+        for file in files:
+            raw = await file.read()
+            file_contents[file.filename] = raw   # cache for saving later
+            try:
+                img = Image.open(_io.BytesIO(raw)).convert("RGB")
+                mean_value = float(np.mean(np.array(img)))
+                if mean_value > BRIGHTNESS_THRESHOLD:
+                    bright_files.append((file.filename, round(mean_value, 1)))
+            except Exception:
+                pass  # cannot read: let the model decide
+
+        if bright_files:
+            names = ", ".join(
+                f"\'{n}\' (brightness {b}/255)" for n, b in bright_files
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"The following file(s) do not look like DaT brain scan images: {names}. "
+                    "DaT scans have dark backgrounds (mean pixel brightness < 150). "
+                    "White-background drawings or spiral/wave images must be uploaded "
+                    "in the Handwriting / Wave Analysis section."
+                ),
+            )
+
+    except HTTPException:
+        raise
+    except Exception as brightness_err:
+        logging.warning(f"Brightness check skipped: {brightness_err}")
+
+    # ── Save and analyse ──────────────────────────────────────────────────────
+    try:
+        upload_dir = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../../../../uploads/dat_scans")
+        )
         os.makedirs(upload_dir, exist_ok=True)
-        
-        # Save uploaded files temporarily
+
         import uuid
-        from datetime import datetime
-        
+
         session_id = str(uuid.uuid4())
         session_dir = os.path.join(upload_dir, session_id)
         os.makedirs(session_dir, exist_ok=True)
-        
+
         file_paths = []
         for file in files:
-            # Save file
             file_path = os.path.join(session_dir, file.filename)
-            with open(file_path, "wb") as buffer:
+            # Use cached bytes if brightness check already read the file
+            content = file_contents.get(file.filename)
+            if not content:
                 content = await file.read()
-                buffer.write(content)
+            with open(file_path, "wb") as buf:
+                buf.write(content)
             file_paths.append(file_path)
-        
-        # Analyze scan using directory
+
         result = dat_service.predict(session_dir)
-        
-        # Clean up uploaded files (optional, you may want to keep them)
-        # import shutil
-        # shutil.rmtree(session_dir)
-        
-        if result.get('success'):
-            # ── Longitudinal: auto-record DaT scan biomarkers ──
+
+        if result.get("success"):
             try:
                 from app.services.longitudinal_hooks import auto_record_from_analysis
                 auto_record_from_analysis(
@@ -614,26 +696,28 @@ async def analyze_dat_scan(
                 )
             except Exception as hook_err:
                 logging.warning(f"Longitudinal hook (dat_scan): {hook_err}")
-            
+
             return {
                 "success": True,
                 "message": "DaT scan analyzed successfully",
                 "user_id": current_user.id,
                 "num_slices": len(files),
                 "session_id": session_id,
-                **result
+                "result": result,
             }
         else:
             raise HTTPException(
                 status_code=500,
-                detail=result.get('error', 'Analysis failed')
+                detail=result.get("error", "Analysis failed"),
             )
-    
+
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"DaT scan analysis error: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"An error occurred during DaT scan analysis: {str(e)}"
+            detail=f"An error occurred during DaT scan analysis: {str(e)}",
         )
 
 @router.get("/dat/status")
@@ -706,59 +790,171 @@ async def analyze_comprehensive(
             status_code=400,
             detail="At least one modality (DaT scan, handwriting, or voice) must be provided"
         )
-    
+
+    # ── DaT scan strict validation (mirrors /dat/analyze rules) ──────────────
+    if dat_scans:
+        DAT_SCAN_MIN = 5
+        DAT_SCAN_MAX = 20
+
+        if len(dat_scans) < DAT_SCAN_MIN:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"DaT Scan requires at least {DAT_SCAN_MIN} brain scan slice images "
+                    f"(you provided {len(dat_scans)}). "
+                    "Real DaT sessions have 10-20 slices. "
+                    "Spiral / wave drawings must be uploaded as Handwriting, not DaT Scan."
+                ),
+            )
+
+        if len(dat_scans) > DAT_SCAN_MAX:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Too many DaT scan files. Maximum {DAT_SCAN_MAX} slices allowed.",
+            )
+
+        HANDWRITING_KEYWORDS = [
+            "spiral", "wave", "drawing", "handwriting", "hw_",
+            "sketch", "trace", "pattern", "pen", "pencil",
+        ]
+        for scan_file in dat_scans:
+            name_lower = scan_file.filename.lower()
+            matched = [kw for kw in HANDWRITING_KEYWORDS if kw in name_lower]
+            if matched:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"File '{scan_file.filename}' looks like a handwriting/drawing image "
+                        f"(keyword: '{matched[0]}'). "
+                        "DaT Scan only accepts brain scan images. "
+                        "Upload spiral/wave drawings as Handwriting instead."
+                    ),
+                )
+
+        # Pixel-brightness check: brain scans are dark, drawings are bright
+        try:
+            from PIL import Image as _PILImage
+            import numpy as _np
+            import io as _io
+
+            BRIGHTNESS_THRESHOLD = 150
+            bright_scans = []
+
+            for scan_file in dat_scans:
+                raw = await scan_file.read()
+                # Store so we don't read twice later
+                scan_file._cached_content = raw
+                try:
+                    img = _PILImage.open(_io.BytesIO(raw)).convert("RGB")
+                    mean_val = float(_np.mean(_np.array(img)))
+                    if mean_val > BRIGHTNESS_THRESHOLD:
+                        bright_scans.append((scan_file.filename, round(mean_val, 1)))
+                except Exception:
+                    pass
+
+            if bright_scans:
+                names = ", ".join(
+                    f"'{n}' (brightness {b}/255)" for n, b in bright_scans
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"The following DaT Scan file(s) appear to be drawings, not brain scans: {names}. "
+                        "DaT brain scans have dark backgrounds (mean brightness < 150). "
+                        "White-background drawings must be uploaded in the Handwriting / Wave section."
+                    ),
+                )
+
+        except HTTPException:
+            raise
+        except Exception as _be:
+            logging.warning(f"DaT brightness check skipped in comprehensive: {_be}")
+
     try:
         # Create temporary directories for processing
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             
-            # Process DaT scans
+            # ── DaT Scan files ────────────────────────────────────────
             dat_scan_paths = None
             if dat_scans:
                 dat_dir = temp_path / "dat_scans"
                 dat_dir.mkdir()
                 dat_scan_paths = []
-                
                 for i, scan_file in enumerate(dat_scans):
-                    scan_path = dat_dir / f"scan_{i:03d}.png"
+                    # Preserve original extension (png / jpg / jpeg)
+                    orig_ext = (scan_file.filename or "scan.png").rsplit(".", 1)[-1].lower()
+                    scan_path = dat_dir / f"scan_{i:03d}.{orig_ext}"
                     with open(scan_path, "wb") as f:
-                        content = await scan_file.read()
-                        f.write(content)
+                        if hasattr(scan_file, "_cached_content"):
+                            f.write(scan_file._cached_content)
+                        else:
+                            await scan_file.seek(0)
+                            content = await scan_file.read()
+                            f.write(content)
                     dat_scan_paths.append(scan_path)
-            
-            # Process handwriting images
+                logging.info("[DaT used] %d scan file(s) received and saved", len(dat_scan_paths))
+            else:
+                logging.info("[DaT] No DaT scan files provided — DaT module will be skipped.")
+
+            # ── Spiral / Wave image files ─────────────────────────────────
             spiral_path = None
             if handwriting_spiral:
-                spiral_path = temp_path / "spiral.png"
+                orig_ext = (handwriting_spiral.filename or "spiral.png").rsplit(".", 1)[-1].lower()
+                spiral_path = temp_path / f"spiral.{orig_ext}"
                 with open(spiral_path, "wb") as f:
                     content = await handwriting_spiral.read()
                     f.write(content)
-            
+                logging.info("[Image used] Spiral image saved: %s", spiral_path.name)
+            else:
+                logging.info("[Image] No spiral image provided.")
+
             wave_path = None
             if handwriting_wave:
-                wave_path = temp_path / "wave.png"
+                orig_ext = (handwriting_wave.filename or "wave.png").rsplit(".", 1)[-1].lower()
+                wave_path = temp_path / f"wave.{orig_ext}"
                 with open(wave_path, "wb") as f:
                     content = await handwriting_wave.read()
                     f.write(content)
-            
-            # Process voice recording
+                logging.info("[Image used] Wave image saved: %s", wave_path.name)
+            else:
+                logging.info("[Image] No wave image provided.")
+
+            # ── Voice recording ───────────────────────────────────────────
             voice_path = None
             if voice_recording:
-                # Get file extension
                 filename = voice_recording.filename or "recording.wav"
-                ext = filename.split('.')[-1]
+                ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "wav"
                 voice_path = temp_path / f"voice.{ext}"
                 with open(voice_path, "wb") as f:
                     content = await voice_recording.read()
                     f.write(content)
-            
-            # Perform multi-modal analysis
+                logging.info("[Voice used] Voice file saved: %s", voice_path.name)
+            else:
+                logging.info("[Voice] No voice file provided — Voice module will be skipped.")
+
+            # ── Run combined_analysis() with 50/25/25 weighted fusion ─────
+            logging.info(
+                "Starting combined_analysis(): DaT=%s  Image=%s  Voice=%s  "
+                "(weights DaT=50%% / Image=25%% / Voice=25%%)",
+                bool(dat_scan_paths), bool(spiral_path or wave_path), bool(voice_path)
+            )
             result = multimodal_service.analyze_comprehensive(
                 dat_scans=dat_scan_paths,
                 handwriting_spiral=spiral_path,
                 handwriting_wave=wave_path,
                 voice_file=voice_path,
-                patient_id=patient_id
+                patient_id=patient_id,
+            )
+            # Log final weighted result
+            _fusion = result.get("fusion_results", {})
+            logging.info(
+                "combined_analysis() RESULT: diagnosis=%s  final_weighted_score=%.4f  "
+                "modalities_used=%s  weights_applied=%s",
+                _fusion.get("final_diagnosis", "N/A"),
+                _fusion.get("final_probability", 0.0),
+                _fusion.get("modalities_used", []),
+                _fusion.get("weights_applied", {}),
             )
             
             # Save diagnosis report to database
