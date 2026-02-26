@@ -1,13 +1,19 @@
 services:
   - type: web
     name: parkinson-backend
-    runtime: python
+    runtime: docker
     rootDir: backend
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
+      - key: DATABASE_URL
+        value: sqlite:///./parkinson_dev.db
+      - key: SECRET_KEY
+        generateValue: true
       - key: PYTHONUNBUFFERED
         value: 1
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: ALLOWED_ORIGINS
+        value: "*"
     healthCheckPath: /health
