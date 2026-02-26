@@ -15,10 +15,29 @@ Requirements:
 """
 
 import numpy as np
-import librosa
-import parselmouth
-from parselmouth.praat import call
-import pywt
+try:
+    import librosa
+    LIBROSA_AVAILABLE = True
+except ImportError:
+    librosa = None
+    LIBROSA_AVAILABLE = False
+
+try:
+    import parselmouth
+    from parselmouth.praat import call
+    PARSELMOUTH_AVAILABLE = True
+except ImportError:
+    parselmouth = None
+    call = None
+    PARSELMOUTH_AVAILABLE = False
+
+try:
+    import pywt
+    PYWT_AVAILABLE = True
+except ImportError:
+    pywt = None
+    PYWT_AVAILABLE = False
+
 from scipy import signal, stats
 from scipy.stats import skew, kurtosis
 import warnings
