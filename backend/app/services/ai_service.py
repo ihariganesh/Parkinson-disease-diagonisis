@@ -417,12 +417,15 @@ Return ONLY a valid JSON object with this EXACT structure:
         """Provide fallback recommendations if AI fails"""
         
         is_pd = 'parkinson' in diagnosis.lower()
+        exercise_desc = "specialized Parkinson's exercise programs" if is_pd else "moderate exercise"
+        checkup_desc = "Consult neurologist every 3-6 months" if is_pd else "Annual health check-ups"
+        checkup_freq = "Every 3-6 months" if is_pd else "Annually"
         
         return {
             'exercise': [
                 {
                     'title': 'Regular Physical Activity',
-                    'description': f"Engage in {'specialized Parkinson\'s exercise programs' if is_pd else 'moderate exercise'} for 30 minutes daily",
+                    'description': f"Engage in {exercise_desc} for 30 minutes daily",
                     'frequency': '5-7 days per week',
                     'benefits': 'Improves mobility, balance, and overall health'
                 },
@@ -474,8 +477,8 @@ Return ONLY a valid JSON object with this EXACT structure:
             'medical_management': [
                 {
                     'title': 'Regular Check-ups',
-                    'description': f"{'Consult neurologist every 3-6 months' if is_pd else 'Annual health check-ups'}",
-                    'frequency': f"{'Every 3-6 months' if is_pd else 'Annually'}",
+                    'description': checkup_desc,
+                    'frequency': checkup_freq,
                     'benefits': 'Monitors progression and adjusts treatment as needed'
                 }
             ],
