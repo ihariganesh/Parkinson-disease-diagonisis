@@ -20,83 +20,71 @@ sys.path.append(str(project_root))
 
 # Import ML models with fallback
 try:
-    # Add backend directory to path for ML-enhanced analyzer
-    backend_path = project_root / "backend"
-    sys.path.append(str(backend_path))
-    from ml_enhanced_analyzer import get_analyzer
-    ADVANCED_DETECTOR = get_analyzer()
-    ANALYZER_TYPE = "ml_enhanced"
-    print(" ML-Enhanced analyzer loaded with trained ResNet50 models")
+    from app.services.handwriting_service import HandwritingService
+    ADVANCED_DETECTOR = HandwritingService()
+    ANALYZER_TYPE = "handwriting_service"
+    print("🧠 HandwritingService loaded (MobileNetV2 + edge-focused preprocessing)")
 except ImportError as e:
-    print(f" ML-Enhanced analyzer not available: {e}")
+    print(f"⚠️ HandwritingService not available: {e}")
     try:
-        # Fallback to enhanced analyzer
-        from enhanced_analyzer import get_analyzer
-        ADVANCED_DETECTOR = get_analyzer()
-        ANALYZER_TYPE = "enhanced"
-        print(" Enhanced computer vision analyzer loaded")
-    except ImportError as e2:
-        print(f" Enhanced analyzer not available: {e2}")
-        try:
-            # Try advanced models
-            sys.path.append(str(project_root / "ml-models"))
-            from advanced_detector import AdvancedParkinsonsDetector
-            ADVANCED_DETECTOR = AdvancedParkinsonsDetector()
-            ANALYZER_TYPE = "advanced"
-            print(f" Advanced transfer learning models loaded: {list(ADVANCED_DETECTOR.models.keys())}")
-        except ImportError as e3:
-            print(f"  Advanced models not available: {e3}")
-            # Create a basic fallback analyzer
-            class BasicFallbackAnalyzer:
-                def analyze_handwriting(self, image_path, drawing_type="spiral"):
-                    import random
-                    import os
-                    from datetime import datetime
-                    
-                    # Basic analysis based on file properties
-                    file_size = os.path.getsize(image_path) if os.path.exists(image_path) else 1000
-                    score = min(file_size / 50000.0, 1.0) + random.uniform(-0.2, 0.2)
-                    score = max(0.0, min(1.0, score))
-                    
-                    prediction = "parkinson" if score > 0.5 else "healthy"
-                    confidence = score if prediction == "parkinson" else 1.0 - score
-                    
-                    return {
-                        'ensemble_prediction': {
-                            'raw_prediction': float(score),
+        sys.path.append(str(project_root / "ml-models"))
+        from advanced_detector import AdvancedParkinsonsDetector
+        ADVANCED_DETECTOR = AdvancedParkinsonsDetector()
+        ANALYZER_TYPE = "advanced"
+        print(f"✓ Advanced transfer learning models loaded: {list(ADVANCED_DETECTOR.models.keys())}")
+    except ImportError as e3:
+        print(f"⚠️  Advanced models not available: {e3}")
+        # Create a basic fallback analyzer
+        class BasicFallbackAnalyzer:
+            def analyze_handwriting(self, image_path, drawing_type="spiral"):
+                import random
+                import os
+                from datetime import datetime
+                
+                # Basic analysis based on file properties
+                file_size = os.path.getsize(image_path) if os.path.exists(image_path) else 1000
+                score = min(file_size / 50000.0, 1.0) + random.uniform(-0.2, 0.2)
+                score = max(0.0, min(1.0, score))
+                
+                prediction = "parkinson" if score > 0.5 else "healthy"
+                confidence = score if prediction == "parkinson" else 1.0 - score
+                
+                return {
+                    'ensemble_prediction': {
+                        'raw_prediction': float(score),
+                        'predicted_class': 1 if prediction == "parkinson" else 0,
+                        'predicted_label': prediction.title(),
+                        'confidence': float(confidence),
+                        'model_agreement': 1.0,
+                        'models_used': 1
+                    },
+                    'individual_models': {
+                        'basic_fallback': {
+                            'model': 'basic_fallback',
                             'predicted_class': 1 if prediction == "parkinson" else 0,
                             'predicted_label': prediction.title(),
-                            'confidence': float(confidence),
-                            'model_agreement': 1.0,
-                            'models_used': 1
-                        },
-                        'individual_models': {
-                            'basic_fallback': {
-                                'model': 'basic_fallback',
-                                'predicted_class': 1 if prediction == "parkinson" else 0,
-                                'predicted_label': prediction.title(),
-                                'confidence': float(confidence)
-                            }
-                        },
-                        'prediction_summary': {
-                            'final_diagnosis': prediction.title(),
-                            'confidence_level': "Moderate" if confidence > 0.6 else "Low",
-                            'confidence_score': f"{confidence:.1%}",
-                            'model_consensus': f"Basic analysis suggests {prediction}",
-                            'recommendation': "This is a basic analysis. Please consult a medical professional for accurate diagnosis."
-                        },
-                        'metadata': {
-                            'drawing_type': drawing_type,
-                            'analysis_timestamp': datetime.now().isoformat(),
-                            'models_available': ['basic_fallback'],
-                            'image_size': (224, 224),
-                            'preprocessing_successful': True
+                            'confidence': float(confidence)
                         }
+                    },
+                    'prediction_summary': {
+                        'final_diagnosis': prediction.title(),
+                        'confidence_level': "Moderate" if confidence > 0.6 else "Low",
+                        'confidence_score': f"{confidence:.1%}",
+                        'model_consensus': f"Basic analysis suggests {prediction}",
+                        'recommendation': "This is a basic analysis. Please consult a medical professional for accurate diagnosis."
+                    },
+                    'metadata': {
+                        'drawing_type': drawing_type,
+                        'analysis_timestamp': datetime.now().isoformat(),
+                        'models_available': ['basic_fallback'],
+                        'image_size': (224, 224),
+                        'preprocessing_successful': True
                     }
-            
-            ADVANCED_DETECTOR = BasicFallbackAnalyzer()
-            ANALYZER_TYPE = "basic_fallback"
-            print(" Basic fallback analyzer created")
+                }
+        
+        ADVANCED_DETECTOR = BasicFallbackAnalyzer()
+        ANALYZER_TYPE = "basic_fallback"
+        print("✓ Basic fallback analyzer created")
 
 logger = logging.getLogger(__name__)
 
@@ -453,9 +441,10 @@ async def demo_upload_handwriting(
                     except:
                         pass  # Ignore cleanup errors
                     
+                    raw_label = ensemble_pred['predicted_label'].lower()  # "parkinson", "healthy", "inconclusive"
                     return {
                         "analysis_id": analysis_id,
-                        "prediction": ensemble_pred['predicted_label'].lower(),
+                        "prediction": raw_label,
                         "confidence_score": ensemble_pred['confidence'],
                         "analysis_details": {
                             "models_used": ensemble_pred['models_used'],
@@ -469,7 +458,8 @@ async def demo_upload_handwriting(
                             },
                             "recommendation": summary['recommendation'],
                             "model_consensus": summary['model_consensus'],
-                            "analyzer_type": ANALYZER_TYPE
+                            "analyzer_type": ANALYZER_TYPE,
+                            "inconclusive": raw_label == "inconclusive",
                         },
                         "drawing_type": drawing_type,
                         "sentence_prompt": sentence_prompt,
@@ -533,7 +523,7 @@ async def demo_upload_handwriting(
                 "confidence_score": 0.0,
                 "analysis_details": {
                     "error": str(e),
-                    "models_available": len(ADVANCED_DETECTOR.models) if ADVANCED_DETECTOR else 0
+                    "models_available": len(ADVANCED_DETECTOR.models) if ADVANCED_DETECTOR and hasattr(ADVANCED_DETECTOR, 'models') else 1 if ADVANCED_DETECTOR else 0
                 },
                 "drawing_type": drawing_type,
                 "sentence_prompt": sentence_prompt,

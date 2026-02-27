@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import uuid
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 
@@ -147,7 +147,7 @@ class LongitudinalTrendEngine:
             biomarkers:  {"tremor_amplitude": 0.34, "smoothness_index": 0.78, …}
         """
         mod = BiomarkerModality(modality)
-        ts = recorded_at or datetime.utcnow()
+        ts = recorded_at or datetime.now(timezone.utc)
         observations: List[BiomarkerObservation] = []
 
         for name, value in biomarkers.items():
@@ -185,7 +185,7 @@ class LongitudinalTrendEngine:
         For every biomarker that has ≥2 observations within the window,
         compute slope and acceleration and persist a BiomarkerTrend row.
         """
-        window_end = datetime.utcnow()
+        window_end = datetime.now(timezone.utc)
         window_start = window_end - timedelta(days=window_months * 30)
 
         # Fetch observations in window
@@ -419,7 +419,12 @@ class LongitudinalTrendEngine:
         # Observation span
         if trends:
             earliest = min(t.window_start for t in trends)
-            months_of_data = (datetime.utcnow() - earliest).days / 30.0
+            # Ensure both datetimes are timezone-aware for comparison
+            now = datetime.now(timezone.utc)
+            if earliest.tzinfo is None:
+                from datetime import timezone as _tz
+                earliest = earliest.replace(tzinfo=_tz.utc)
+            months_of_data = (now - earliest).days / 30.0
         else:
             months_of_data = 0.0
 

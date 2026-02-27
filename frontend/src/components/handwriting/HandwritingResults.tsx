@@ -30,9 +30,11 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
   onNewAnalysis 
 }) => {
   const isHealthy = result.prediction === 'healthy';
+  const isInconclusive = result.prediction === 'inconclusive';
   const confidencePercentage = Math.round(result.confidence * 100);
 
   const getResultColor = () => {
+    if (isInconclusive) return 'gray';
     if (isHealthy) {
       return result.confidence > 0.8 ? 'green' : 'yellow';
     } else {
@@ -51,12 +53,16 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
         return <AlertTriangle className="w-8 h-8 text-orange-600" />;
       case 'red':
         return <AlertTriangle className="w-8 h-8 text-red-600" />;
+      case 'gray':
       default:
-        return <Activity className="w-8 h-8 text-gray-600" />;
+        return <Activity className="w-8 h-8 text-gray-500" />;
     }
   };
 
   const getResultMessage = () => {
+    if (isInconclusive) {
+      return "The image quality or drawing style could not be classified with confidence. Please retake the drawing on plain white paper in good lighting and try again.";
+    }
     if (isHealthy) {
       if (result.confidence > 0.8) {
         return "Your handwriting patterns appear normal with no significant indicators of Parkinson's disease.";
@@ -79,7 +85,8 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
       case 'yellow': return 'bg-yellow-500';
       case 'orange': return 'bg-orange-500';
       case 'red': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'gray':
+      default: return 'bg-gray-400';
     }
   };
 
@@ -103,7 +110,11 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
 
         <div className="text-center mb-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            {isHealthy ? 'Normal Patterns Detected' : 'Irregular Patterns Detected'}
+            {isInconclusive
+              ? 'Result Inconclusive'
+              : isHealthy
+              ? 'Normal Patterns Detected'
+              : 'Irregular Patterns Detected'}
           </h3>
           <p className="text-gray-600 text-lg leading-relaxed">
             {getResultMessage()}

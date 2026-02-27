@@ -1,32 +1,15 @@
 """
 Handwriting Analysis Service
-Wrapper for handwriting analyzer to integrate with multi-modal system.
+MobileNetV2-based handwriting classifier for Parkinson's disease detection.
 
-IMPORTANT: The trained SVM models (spiral_svm_model_svm.pkl / wave_svm_model_svm.pkl)
-are severely biased — they predict Parkinson's Disease with ~91% probability for
-EVERY image regardless of content.
-
-This module now uses a HYBRID approach:
- 1. If TensorFlow CNN models exist → use them (most accurate).
- 2. If SVM models exist → blend SVM prediction with image-feature heuristics
-    so that the result actually varies with image content.
- 3. If nothing is available → use pure image-feature heuristics.
-
-Image-feature heuristics extract clinically-meaningful signals:
-  • Stroke irregularity / roughness  (tremor indicator)
-  • Contour smoothness               (motor control indicator)
-  • Pressure variation               (grip stability)
-  • Edge density                     (line quality)
+Preprocessing: grayscale → Otsu threshold → Canny edges → 3-channel stack
+This isolates stroke/tremor patterns, ignoring background/paper/lighting.
 """
 
 import sys
-import warnings
 from pathlib import Path
 import numpy as np
 from typing import Dict, Tuple
-
-import logging
-logger = logging.getLogger(__name__)
 
 try:
     import tensorflow as tf
@@ -34,7 +17,7 @@ try:
 except ImportError:
     tf = None
     TF_AVAILABLE = False
-    logger.info("TensorFlow not available — using SVM/heuristic fallback.")
+    print("⚠️  TensorFlow not available - handwriting ML model disabled.")
 
 try:
     import cv2
@@ -42,7 +25,7 @@ try:
 except ImportError:
     cv2 = None
     CV2_AVAILABLE = False
-    logger.warning("OpenCV not available — image analysis disabled.")
+    print("⚠️  OpenCV not available - handwriting image processing disabled")
 
 try:
     import joblib
@@ -50,392 +33,371 @@ try:
     SVM_AVAILABLE = True
 except ImportError as e:
     SVM_AVAILABLE = False
-    logger.info(f"skimage/joblib not available: {e}")
-
-
-# ─── SVM bias threshold ───────────────────────────────────────────────────────
-# If the SVM always returns a probability ≥ this for class-1, we consider it
-# biased and downweight its contribution in the final blend.
-_SVM_BIAS_THRESHOLD = 0.85   # above this → SVM is likely biased
+    print(f"⚠️  skimage or joblib not available - SVM fallback disabled: {e}")
 
 
 class HandwritingService:
-    """Handwriting analysis service for Parkinson's disease detection."""
-
+    """Handwriting analysis service for Parkinson's disease detection
+    
+    Uses MobileNetV2 with edge-focused preprocessing:
+      Ch0: Grayscale (stroke intensity)
+      Ch1: Otsu binary threshold (ink vs paper separation)
+      Ch2: Canny edges (stroke boundaries + tremor wobble)
+    """
+    
+    # Confidence below this threshold → Inconclusive
+    CONFIDENCE_THRESHOLD = 0.25
+    
     def __init__(self):
-        self.spiral_model  = None   # TF CNN
-        self.wave_model    = None   # TF CNN
-
-        self.spiral_svm    = None   # SVM fallback
+        """Initialize handwriting analyzer"""
+        self.model = None
+        
+        self.spiral_svm = None
         self.spiral_scaler = None
-        self.wave_svm      = None
-        self.wave_scaler   = None
-
-        # Track whether SVM is biased (detected at load time)
-        self._spiral_svm_biased = False
-        self._wave_svm_biased   = False
-
-        self.image_size_cnn = (224, 224)   # ResNet50 input size
-        self.image_size_svm = (128, 128)   # SVM+HOG input size
-
+        self.wave_svm = None
+        self.wave_scaler = None
+        
+        self.image_size_cnn = (224, 224)
+        self.image_size_svm = (128, 128)
+        
         self._load_models()
-
-    # ── Model loading ──────────────────────────────────────────────────────────
-
-    def _load_models(self):
-        base_dir   = Path(__file__).parent.parent.parent.parent
-        models_dir = (
-            base_dir / "backend" / "models"
-            if (base_dir / "backend" / "models").exists()
-            else base_dir / "models"
-        )
-
-        # ── TF CNN ────────────────────────────────────────────────────────────
-        if TF_AVAILABLE:
-            for attr, fname in [("spiral_model", "resnet50_spiral_best.h5"),
-                                 ("wave_model",   "resnet50_wave_best.h5")]:
-                p = models_dir / fname
-                if p.exists():
-                    try:
-                        setattr(self, attr, tf.keras.models.load_model(str(p)))
-                        logger.info("Loaded CNN model: %s", fname)
-                    except Exception as e:
-                        logger.warning("Could not load %s: %s", fname, e)
-
-        # ── SVM fallback ──────────────────────────────────────────────────────
-        if SVM_AVAILABLE and not (self.spiral_model and self.wave_model):
-            for svm_attr, scaler_attr, svm_fname, scaler_fname, bias_attr in [
-                ("spiral_svm", "spiral_scaler",
-                 "spiral_svm_model_svm.pkl", "spiral_svm_model_scaler.pkl",
-                 "_spiral_svm_biased"),
-                ("wave_svm",   "wave_scaler",
-                 "wave_svm_model_svm.pkl",   "wave_svm_model_scaler.pkl",
-                 "_wave_svm_biased"),
-            ]:
-                svm_path = models_dir / svm_fname
-                scl_path = models_dir / scaler_fname
-                if svm_path.exists() and scl_path.exists():
-                    try:
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            svm    = joblib.load(svm_path)
-                            scaler = joblib.load(scl_path)
-
-                        setattr(self, svm_attr,    svm)
-                        setattr(self, scaler_attr, scaler)
-
-                        # ── Bias detection ────────────────────────────────────
-                        try:
-                            rng       = np.random.RandomState(42)
-                            n_feats   = getattr(scaler, "n_features_in_", 1764)
-                            probe     = rng.randn(10, n_feats)
-                            probe_scl = scaler.transform(probe)
-                            probas    = svm.predict_proba(probe_scl)
-                            # If every probe gives ≥ bias_threshold for class-1 → biased
-                            all_biased = bool(np.all(probas[:, 1] >= _SVM_BIAS_THRESHOLD))
-                            setattr(self, bias_attr, all_biased)
-                            if all_biased:
-                                logger.warning(
-                                    "%s appears biased (always predicts PD≥%.0f%%). "
-                                    "Will blend with image-feature heuristics.",
-                                    svm_fname, _SVM_BIAS_THRESHOLD * 100,
-                                )
-                        except Exception as bias_err:
-                            logger.warning("Bias check failed for %s: %s", svm_fname, bias_err)
-
-                        logger.info("Loaded SVM: %s (biased=%s)", svm_fname,
-                                    getattr(self, bias_attr))
-                    except Exception as e:
-                        logger.warning("Could not load SVM %s: %s", svm_fname, e)
-
-    # ── Public analysis methods ────────────────────────────────────────────────
-
-    def analyze_spiral(self, image_path: str) -> Dict:
-        """Analyse spiral drawing."""
-        return self._analyze(image_path, drawing_type="spiral")
-
-    def analyze_wave(self, image_path: str) -> Dict:
-        """Analyse wave drawing."""
-        return self._analyze(image_path, drawing_type="wave")
-
-    def analyze_combined(self, spiral_path: str, wave_path: str) -> Dict:
-        """Analyse both drawings and average results."""
-        spiral_r = self.analyze_spiral(spiral_path)
-        wave_r   = self.analyze_wave(wave_path)
-
-        ok = [r for r in [spiral_r, wave_r] if r.get("success")]
-        if not ok:
-            return {"success": False, "error": "Both analyses failed.",
-                    "probability": 0.5, "pd_probability": 0.5, "confidence": 0.0}
-
-        avg_prob = float(np.mean([r["pd_probability"] for r in ok]))
-        avg_conf = float(np.mean([r["confidence"]     for r in ok]))
-        diagnosis = "Parkinson's Disease" if avg_prob > 0.5 else "Healthy"
-
-        return {
-            "success": True,
-            "diagnosis": diagnosis,
-            "prediction": diagnosis,
-            "probability": avg_prob,
-            "pd_probability": avg_prob,
-            "confidence": avg_conf,
-            "spiral_result": spiral_r,
-            "wave_result":   wave_r,
-        }
-
-    def predict(self, image_path: str) -> Dict:
-        """Compatibility wrapper used by multimodal service."""
-        return self._analyze(image_path, drawing_type="spiral")
-
-    # ── Core analysis ──────────────────────────────────────────────────────────
-
-    def _analyze(self, image_path: str, drawing_type: str) -> Dict:
+    
+    def preprocess_image(self, image_path: str, target_size: Tuple[int, int]) -> np.ndarray:
         """
-        Unified analysis pipeline.
-        Priority: CNN → SVM+heuristic blend → pure heuristic.
+        Edge-focused preprocessing that isolates stroke/tremor patterns.
+        
+        Creates 3-channel image:
+          Ch0: Normalized grayscale
+          Ch1: Otsu binary threshold (ink strokes isolated from paper)
+          Ch2: Canny edges (stroke boundaries and tremor wobbles)
         """
         try:
-            # ── 1. CNN ────────────────────────────────────────────────────────
-            cnn_model = self.spiral_model if drawing_type == "spiral" else self.wave_model
-            if cnn_model and TF_AVAILABLE and CV2_AVAILABLE:
-                result = self._predict_cnn(image_path, cnn_model)
-                if result["success"]:
-                    result["modality"] = drawing_type
-                    logger.info("[%s] CNN: pd_prob=%.3f  conf=%.3f",
-                                drawing_type, result["pd_probability"], result["confidence"])
-                    return result
-
-            # ── 2. Image-feature heuristics (content-sensitive) ───────────────
-            heuristic = self._compute_heuristic_score(image_path)   # always run
-
-            # ── 3. SVM (blended if biased) ────────────────────────────────────
-            svm    = self.spiral_svm    if drawing_type == "spiral" else self.wave_svm
-            scaler = self.spiral_scaler if drawing_type == "spiral" else self.wave_scaler
-            biased = self._spiral_svm_biased if drawing_type == "spiral" else self._wave_svm_biased
-
-            if svm and scaler and SVM_AVAILABLE and CV2_AVAILABLE:
-                svm_prob, svm_conf = self._predict_svm(image_path, svm, scaler)
-
-                if biased:
-                    # Blend: 30% SVM (anchored but unreliable) + 70% heuristic
-                    pd_prob  = 0.30 * svm_prob + 0.70 * heuristic["pd_prob"]
-                    conf     = 0.30 * svm_conf + 0.70 * heuristic["confidence"]
-                    method   = "SVM-heuristic blend (SVM was biased)"
-                else:
-                    # Blend: 60% SVM + 40% heuristic
-                    pd_prob  = 0.60 * svm_prob + 0.40 * heuristic["pd_prob"]
-                    conf     = 0.60 * svm_conf + 0.40 * heuristic["confidence"]
-                    method   = "SVM-heuristic blend"
-
-                logger.info("[%s] %s: svm_prob=%.3f  heuristic_prob=%.3f  final=%.3f",
-                            drawing_type, method, svm_prob, heuristic["pd_prob"], pd_prob)
-            else:
-                # Pure heuristic
-                pd_prob  = heuristic["pd_prob"]
-                conf     = heuristic["confidence"]
-                method   = "image-feature heuristic"
-                logger.info("[%s] Heuristic only: pd_prob=%.3f  conf=%.3f",
-                            drawing_type, pd_prob, conf)
-
-            pd_prob  = float(np.clip(pd_prob, 0.0, 1.0))
-            conf     = float(np.clip(conf,    0.0, 1.0))
-            diagnosis = "Parkinson's Disease" if pd_prob > 0.5 else "Healthy"
-
-            return {
-                "success":      True,
-                "diagnosis":    diagnosis,
-                "prediction":   diagnosis,
-                "probability":  pd_prob,
-                "pd_probability": pd_prob,
-                "confidence":   conf,
-                "modality":     drawing_type,
-                "method":       method,
-                # Include heuristic details for transparency
-                "tremor_ratio":   heuristic.get("tremor_ratio",   None),
-                "stroke_roughness": heuristic.get("stroke_roughness", None),
-            }
-
+            gray = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+            if gray is None:
+                raise ValueError(f"Could not read image: {image_path}")
+            
+            gray = cv2.resize(gray, target_size)
+            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+            
+            # Ch0: Normalized grayscale
+            ch_gray = blurred.astype(np.float32) / 255.0
+            
+            # Ch1: Otsu binary threshold (isolates ink from paper)
+            _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            ch_binary = binary.astype(np.float32) / 255.0
+            
+            # Ch2: Canny edges (captures stroke boundaries and tremor)
+            edges = cv2.Canny(blurred, 30, 120)
+            ch_edges = edges.astype(np.float32) / 255.0
+            
+            # Stack into 3-channel image
+            return np.stack([ch_gray, ch_binary, ch_edges], axis=-1)
+            
         except Exception as e:
-            logger.error("[%s] Analysis exception: %s", drawing_type, e, exc_info=True)
-            return {
-                "success":        False,
-                "error":          str(e),
-                "diagnosis":      "Unknown",
-                "prediction":     "Unknown",
-                "probability":    0.5,
-                "pd_probability": 0.5,
-                "confidence":     0.0,
-                "modality":       drawing_type,
-            }
-
-    # ── Sub-predictors ────────────────────────────────────────────────────────
-
-    def _predict_cnn(self, image_path: str, model) -> Dict:
-        try:
-            image = self._preprocess_cnn(image_path)
-            if image is None:
-                return {"success": False}
-            prob = float(model.predict(image, verbose=0)[0][0])
-            conf = abs(prob - 0.5) * 2
-            diag = "Parkinson's Disease" if prob > 0.5 else "Healthy"
-            return {"success": True, "pd_probability": prob,
-                    "probability": prob, "confidence": conf,
-                    "prediction": diag, "diagnosis": diag}
-        except Exception as e:
-            logger.warning("CNN prediction failed: %s", e)
-            return {"success": False}
-
-    def _predict_svm(self, image_path: str, svm, scaler) -> Tuple[float, float]:
-        image = self._preprocess_svm(image_path)
-        if image is None:
-            return 0.5, 0.0
-        feats   = self._extract_hog_features(image).reshape(1, -1)
-        scaled  = scaler.transform(feats)
-        probas  = svm.predict_proba(scaled)[0]
-        pd_prob = float(probas[1])            # class-1 = Parkinson
-        conf    = abs(pd_prob - 0.5) * 2
-        return pd_prob, conf
-
-    # ── Image-feature heuristic ───────────────────────────────────────────────
-
-    def _compute_heuristic_score(self, image_path: str) -> Dict:
-        """
-        Extract clinically-grounded features from the drawing image.
-
-        Parkinson's handwriting characteristics:
-          - High tremor ratio (irregular, spiky contours)
-          - Low smoothness (stroke wobble)
-          - Low mean stroke thickness (weakened grip)
-          - High edge roughness
-
-        Returns a dict with pd_prob ∈ [0,1] and confidence ∈ [0,1].
-        """
-        if not CV2_AVAILABLE:
-            return {"pd_prob": 0.5, "confidence": 0.1}
-
-        try:
-            img_gray = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-            if img_gray is None:
-                return {"pd_prob": 0.5, "confidence": 0.1}
-
-            img_gray = cv2.resize(img_gray, (256, 256))
-
-            # ── Binarise (drawing = dark on light background) ─────────────────
-            _, binary = cv2.threshold(img_gray, 0, 255,
-                                      cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-
-            # ── Find contours ──────────────────────────────────────────────────
-            contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL,
-                                            cv2.CHAIN_APPROX_SIMPLE)
-
-            if not contours:
-                # Blank / non-drawing image → neutral
-                return {"pd_prob": 0.5, "confidence": 0.1}
-
-            # Use the largest contour as the main stroke
-            main_c = max(contours, key=cv2.contourArea)
-            area   = cv2.contourArea(main_c)
-
-            if area < 50:
-                return {"pd_prob": 0.5, "confidence": 0.1}
-
-            arc_length = cv2.arcLength(main_c, closed=False)
-            hull       = cv2.convexHull(main_c)
-            hull_area  = cv2.contourArea(hull) + 1e-6
-
-            # ── Feature 1: tremor ratio (hull excess) ──────────────────────────
-            # High tremor_ratio → irregular drawing → more PD-like
-            tremor_ratio = float((hull_area - area) / hull_area)   # 0=perfect, 1=very irregular
-            tremor_ratio = np.clip(tremor_ratio, 0.0, 1.0)
-
-            # ── Feature 2: contour smoothness ──────────────────────────────────
-            # Low smoothness → wobbles → PD
-            smoothness = float(area / (arc_length + 1e-6))
-            # Normalise: typical range 0–30; remap to 0–1 (inverted: low smooth → high PD risk)
-            smoothness_norm = float(np.clip(1.0 - smoothness / 30.0, 0.0, 1.0))
-
-            # ── Feature 3: edge roughness ──────────────────────────────────────
-            # Count edge pixels relative to contour area
-            edges = cv2.Canny(img_gray, 50, 150)
-            edge_px = float(np.sum(edges > 0))
-            edge_roughness = float(np.clip(edge_px / (arc_length + 1), 0.0, 3.0) / 3.0)
-
-            # ── Feature 4: stroke width variability ────────────────────────────
-            dist_map = cv2.distanceTransform(binary, cv2.DIST_L2, 5)
-            stroke_px = dist_map[binary > 0]
-            if len(stroke_px) > 0:
-                stroke_cv = float(np.std(stroke_px) / (np.mean(stroke_px) + 1e-6))
-                stroke_cv = float(np.clip(stroke_cv, 0.0, 1.0))
-            else:
-                stroke_cv = 0.5
-
-            # ── Feature 5: pixel intensity std (pressure variation) ────────────
-            pressure_std = float(np.std(img_gray) / 255.0)
-
-            # ── Weighted PD score ──────────────────────────────────────────────
-            # Higher = more PD-like
-            pd_prob = (
-                0.35 * tremor_ratio      +   # most important
-                0.25 * smoothness_norm   +
-                0.20 * edge_roughness    +
-                0.10 * stroke_cv         +
-                0.10 * pressure_std
-            )
-            pd_prob = float(np.clip(pd_prob, 0.0, 1.0))
-
-            # Confidence: how far from the 0.5 decision boundary
-            confidence = float(np.clip(abs(pd_prob - 0.5) * 2 + 0.2, 0.0, 1.0))
-
-            return {
-                "pd_prob":         pd_prob,
-                "confidence":      confidence,
-                "tremor_ratio":    round(tremor_ratio, 4),
-                "smoothness_norm": round(smoothness_norm, 4),
-                "edge_roughness":  round(edge_roughness, 4),
-                "stroke_cv":       round(stroke_cv, 4),
-                "stroke_roughness": round(tremor_ratio + edge_roughness, 4),
-            }
-
-        except Exception as e:
-            logger.warning("Heuristic analysis failed for %s: %s", image_path, e)
-            return {"pd_prob": 0.5, "confidence": 0.1}
-
-    # ── Preprocessing helpers ─────────────────────────────────────────────────
-
-    def _preprocess_cnn(self, image_path: str):
-        try:
-            img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-            if img is None:
-                return None
-            img = cv2.resize(img, self.image_size_cnn).astype(np.float32) / 255.0
-            img = np.expand_dims(img, axis=-1)
-            img = np.expand_dims(img, axis=0)
-            return img
-        except Exception:
-            return None
-
-    def _preprocess_svm(self, image_path: str):
-        try:
-            img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-            if img is None:
-                return None
-            img = cv2.resize(img, self.image_size_svm).astype(np.float32) / 255.0
-            img = cv2.GaussianBlur(img, (3, 3), 0)
-            return img
-        except Exception:
-            return None
-
-    # Note: CLAHE removed from SVM preprocessing — it normalises fine textures
-    # and makes different images look identical to HOG features.
-
+            raise ValueError(f"Error preprocessing image {image_path}: {str(e)}")
+            
     def _extract_hog_features(self, image: np.ndarray) -> np.ndarray:
+        """Extract HOG features from image for SVM model"""
         features, _ = hog(
             image,
             orientations=9,
             pixels_per_cell=(8, 8),
             cells_per_block=(2, 2),
-            block_norm="L2-Hys",
+            block_norm='L2-Hys',
             visualize=True,
-            feature_vector=True,
+            feature_vector=True
         )
         return features.reshape(1, -1)
+    
+    def _load_models(self):
+        """Load trained MobileNetV2 model for handwriting analysis"""
+        base_dir = Path(__file__).parent.parent.parent.parent  # Go to project root
+        ml_models_dir = base_dir / "ml-models" / "models"
+        models_dir = base_dir / "backend" / "models" if (base_dir / "backend" / "models").exists() else base_dir / "models"
+        
+        if TF_AVAILABLE:
+            # Try loading MobileNetV2 model first (preferred)
+            mobilenet_path = ml_models_dir / "handwriting" / "mobilenetv2_handwriting_best.keras"
+            if not mobilenet_path.exists():
+                mobilenet_path = models_dir / "handwriting" / "mobilenetv2_handwriting_best.keras"
+            
+            if mobilenet_path.exists():
+                try:
+                    self.model = tf.keras.models.load_model(str(mobilenet_path))
+                    print(f"✅ Loaded MobileNetV2 handwriting model ({mobilenet_path.stat().st_size / 1024 / 1024:.1f}MB)")
+                    return
+                except Exception as e:
+                    print(f"⚠️  Could not load MobileNetV2 model: {e}")
+            
+            # Fallback: try ResNet50 combined model
+            resnet_path = ml_models_dir / "handwriting" / "resnet50_combined_best.keras"
+            if not resnet_path.exists():
+                resnet_path = models_dir / "handwriting" / "resnet50_combined_best.keras"
+            
+            if resnet_path.exists():
+                try:
+                    self.model = tf.keras.models.load_model(str(resnet_path))
+                    print(f"✅ Loaded ResNet50 handwriting model (fallback)")
+                except Exception as e:
+                    print(f"⚠️  Could not load ResNet50 model: {e}")
+                    
+        if not TF_AVAILABLE or not self.model:
+            # Load SVM fallback models
+            if SVM_AVAILABLE:
+                try:
+                    spiral_svm_path = base_dir / "models" / "spiral_svm_model_svm.pkl"
+                    spiral_scaler_path = base_dir / "models" / "spiral_svm_model_scaler.pkl"
+                    if spiral_svm_path.exists() and spiral_scaler_path.exists():
+                        self.spiral_svm = joblib.load(spiral_svm_path)
+                        self.spiral_scaler = joblib.load(spiral_scaler_path)
+                        print(f"✅ Loaded spiral SVM fallback model")
+                        
+                    wave_svm_path = base_dir / "models" / "wave_svm_model_svm.pkl"
+                    wave_scaler_path = base_dir / "models" / "wave_svm_model_scaler.pkl"
+                    if wave_svm_path.exists() and wave_scaler_path.exists():
+                        self.wave_svm = joblib.load(wave_svm_path)
+                        self.wave_scaler = joblib.load(wave_scaler_path)
+                        print(f"✅ Loaded wave SVM fallback model")
+                except Exception as e:
+                    print(f"⚠️  Could not load SVM fallback models: {e}")
+
+    def _predict_cnn(self, image_path: str) -> Tuple[float, float, str]:
+        """
+        Run CNN prediction on an image. Returns (probability, confidence, diagnosis).
+        Applies confidence gating — returns 'Inconclusive' if confidence too low.
+        """
+        image = self.preprocess_image(image_path, self.image_size_cnn)
+        # preprocess_image already returns 3-channel (gray, binary, edges)
+        image = np.expand_dims(image, axis=0)  # (1, 224, 224, 3)
+        prediction = self.model.predict(image, verbose=0)[0][0]
+        probability = float(prediction)
+        confidence = abs(probability - 0.5) * 2
+        
+        if confidence < self.CONFIDENCE_THRESHOLD:
+            diagnosis = "Inconclusive"
+        elif probability > 0.5:
+            diagnosis = "Parkinson's Disease"
+        else:
+            diagnosis = "Healthy"
+        
+        return probability, confidence, diagnosis
+
+    def analyze_spiral(self, image_path: str) -> Dict:
+        """Analyze spiral drawing"""
+        try:
+            if self.model and TF_AVAILABLE:
+                probability, confidence, diagnosis = self._predict_cnn(image_path)
+                
+            elif self.spiral_svm and SVM_AVAILABLE:
+                image = self.preprocess_image(image_path, self.image_size_svm)
+                # SVM needs single-channel grayscale
+                gray_ch = image[:, :, 0]  # Use the grayscale channel
+                features = self._extract_hog_features(gray_ch)
+                features_scaled = self.spiral_scaler.transform(features)
+                prediction_prob = self.spiral_svm.predict_proba(features_scaled)[0]
+                
+                probability = float(prediction_prob[1])
+                confidence = abs(probability - 0.5) * 2
+                diagnosis = "Parkinson's Disease" if probability > 0.5 else "Healthy"
+                
+            else:
+                return {
+                    "success": False,
+                    "error": "No model available for spiral analysis",
+                    "diagnosis": "Unknown",
+                    "probability": 0.5,
+                    "confidence": 0.0
+                }
+
+            return {
+                "success": True,
+                "diagnosis": diagnosis,
+                "prediction": diagnosis,
+                "probability": probability,
+                "pd_probability": probability,
+                "confidence": confidence,
+                "modality": "spiral"
+            }
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {
+                "success": False,
+                "error": str(e),
+                "diagnosis": "Unknown",
+                "probability": 0.5,
+                "confidence": 0.0
+            }
+    
+    def analyze_wave(self, image_path: str) -> Dict:
+        """Analyze wave drawing"""
+        try:
+            if self.model and TF_AVAILABLE:
+                probability, confidence, diagnosis = self._predict_cnn(image_path)
+                
+            elif self.wave_svm and SVM_AVAILABLE:
+                image = self.preprocess_image(image_path, self.image_size_svm)
+                gray_ch = image[:, :, 0]
+                features = self._extract_hog_features(gray_ch)
+                features_scaled = self.wave_scaler.transform(features)
+                prediction_prob = self.wave_svm.predict_proba(features_scaled)[0]
+                
+                probability = float(prediction_prob[1])
+                confidence = abs(probability - 0.5) * 2
+                diagnosis = "Parkinson's Disease" if probability > 0.5 else "Healthy"
+                
+            else:
+                return {
+                    "success": False,
+                    "error": "No model available for wave analysis",
+                    "diagnosis": "Unknown",
+                    "probability": 0.5,
+                    "confidence": 0.0
+                }
+                
+            return {
+                "success": True,
+                "diagnosis": diagnosis,
+                "prediction": diagnosis,
+                "probability": probability,
+                "pd_probability": probability,
+                "confidence": confidence,
+                "modality": "wave"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "diagnosis": "Unknown",
+                "probability": 0.5,
+                "confidence": 0.0
+            }
+    
+    def analyze_combined(self, spiral_path: str, wave_path: str) -> Dict:
+        """Analyze both spiral and wave drawings and combine results"""
+        spiral_result = self.analyze_spiral(spiral_path)
+        wave_result = self.analyze_wave(wave_path)
+        
+        if not spiral_result["success"] and not wave_result["success"]:
+            return {
+                "success": False,
+                "error": "Both analyses failed",
+                "diagnosis": "Unknown",
+                "probability": 0.5,
+                "confidence": 0.0
+            }
+        
+        # Average probabilities
+        prob_sum = 0
+        prob_count = 0
+        
+        if spiral_result["success"]:
+            prob_sum += spiral_result["probability"]
+            prob_count += 1
+        
+        if wave_result["success"]:
+            prob_sum += wave_result["probability"]
+            prob_count += 1
+        
+        avg_probability = prob_sum / prob_count if prob_count > 0 else 0.5
+        
+        # Average confidence
+        conf_sum = 0
+        conf_count = 0
+        
+        if spiral_result["success"]:
+            conf_sum += spiral_result["confidence"]
+            conf_count += 1
+        
+        if wave_result["success"]:
+            conf_sum += wave_result["confidence"]
+            conf_count += 1
+        
+        avg_confidence = conf_sum / conf_count if conf_count > 0 else 0.0
+        
+        diagnosis = "Parkinson's Disease" if avg_probability > 0.5 else "Healthy"
+        
+        return {
+            "success": True,
+            "diagnosis": diagnosis,
+            "probability": avg_probability,
+            "confidence": avg_confidence,
+            "spiral_result": spiral_result,
+            "wave_result": wave_result
+        }
+    
+    def predict(self, image_path: str) -> Dict:
+        """
+        Predict method for compatibility with multimodal service
+        Automatically detects if it's a spiral or wave and analyzes accordingly
+        If unsure, tries both and returns the combined result
+        """
+        try:
+            # Try analyzing as spiral first
+            result = self.analyze_spiral(image_path)
+            
+            # If handwriting analysis actually failed because of missing tools
+            if not result.get("success", False):
+                raise Exception(result.get("error", "Failed to analyze"))
+                
+            return result
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Could not analyze image: {str(e)}",
+                "diagnosis": "Unknown",
+                "prediction": "Unknown",
+                "probability": 0.5,
+                "pd_probability": 0.5,
+                "confidence": 0.0
+            }
+
+    def analyze_handwriting(self, image_path: str, drawing_type: str = "spiral") -> Dict:
+        """
+        Unified analyze_handwriting method for compatibility with the handwriting endpoint.
+        Routes to analyze_spiral or analyze_wave and wraps the result in the
+        ensemble_prediction / prediction_summary format expected by the endpoint.
+        """
+        if drawing_type == "wave":
+            raw = self.analyze_wave(image_path)
+        else:
+            raw = self.analyze_spiral(image_path)
+
+        if not raw.get("success", False):
+            return {"error": raw.get("error", "Analysis failed")}
+
+        probability = raw.get("probability", 0.5)
+        confidence = raw.get("confidence", 0.0)
+        diagnosis = raw.get("diagnosis", "Unknown")
+        predicted_label = diagnosis  # e.g. "Parkinson's Disease" or "Healthy"
+        predicted_class = 1 if probability > 0.5 else 0
+        model_name = "MobileNetV2" if self.model else "SVM-HOG"
+
+        return {
+            "success": True,
+            "ensemble_prediction": {
+                "predicted_label": predicted_label,
+                "predicted_class": predicted_class,
+                "confidence": confidence,
+                "raw_prediction": probability,
+                "models_used": 1,
+                "model_agreement": 1.0,
+            },
+            "prediction_summary": {
+                "final_diagnosis": predicted_label,
+                "confidence_level": "High" if confidence > 0.7 else "Moderate" if confidence > 0.4 else "Low",
+                "recommendation": (
+                    "Consult a neurologist for further evaluation."
+                    if probability > 0.5
+                    else "No significant Parkinson's indicators detected."
+                ),
+                "model_consensus": f"{model_name} predicts {predicted_label}",
+            },
+            "individual_models": {
+                model_name: {
+                    "predicted_label": predicted_label,
+                    "confidence": confidence,
+                    "probability": probability,
+                }
+            },
+        }

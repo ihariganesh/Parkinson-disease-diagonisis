@@ -119,6 +119,38 @@ class SpeechService:
                 "note": f"Analysis error: {str(e)}"
             }
     
+    def analyze_audio_from_bytes(self, audio_bytes: bytes, filename: str) -> Dict:
+        """Analyze audio from raw bytes (for uploaded files via API)"""
+        import tempfile
+        import os
+        ext = os.path.splitext(filename)[1] if filename else '.wav'
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+        try:
+            return self.analyze_voice(tmp_path)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    def get_system_info(self) -> Dict:
+        """Get system information for health check endpoints"""
+        model_type = "Unknown"
+        if self.predictor and hasattr(self.predictor, 'model_type') and self.predictor.model_type:
+            model_type = self.predictor.model_type
+        
+        return {
+            "service_version": "4.0-cnn-lstm",
+            "model_loaded": self.is_available(),
+            "feature_extractor": {
+                "available": self.feature_extractor is not None,
+                "features_count": 753,
+                "total_features": 753,
+            },
+            "model_type": model_type,
+            "recommendations": [] if self.is_available() else ["Speech model files not found"],
+        }
+
     def is_available(self) -> bool:
         """Check if speech analysis is available"""
         return self.predictor is not None and self.predictor.is_available()

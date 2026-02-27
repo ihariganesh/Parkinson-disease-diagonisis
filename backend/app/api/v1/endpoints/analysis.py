@@ -13,55 +13,18 @@ ml_models_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../
 if ml_models_path not in sys.path:
     sys.path.insert(0, ml_models_path)
 
+# Use the trained sklearn SpeechService (SVM-RBF, 89.5% accuracy)
 try:
-    # Try to import both original and enhanced speech analysis services
-    import importlib.util
-    
-    # Try to import the enhanced service first
-    speech_service_v2_path = os.path.join(ml_models_path, "speech_analysis_service_v2.py")
-    speech_service_path = os.path.join(ml_models_path, "speech_analysis_service.py")
-    
-    # Preference for V2 service if available
-    if os.path.exists(speech_service_v2_path):
-        spec = importlib.util.spec_from_file_location("speech_analysis_service_v2", speech_service_v2_path)
-        speech_analysis_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(speech_analysis_module)
-        
-        analyze_speech_bytes = speech_analysis_module.analyze_speech_bytes_v2
-        SpeechAnalysisService = speech_analysis_module.SpeechAnalysisServiceV2
-        
-        # Initialize with correct models path
-        speech_service = SpeechAnalysisService(models_dir=os.path.join(ml_models_path, "models/speech"))
-        SPEECH_ANALYSIS_AVAILABLE = True
-        SPEECH_SERVICE_VERSION = "v2"
-        logging.info("✓ Using enhanced speech analysis service v2")
-        
-    elif os.path.exists(speech_service_path):
-        spec = importlib.util.spec_from_file_location("speech_analysis_service", speech_service_path)
-        speech_analysis_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(speech_analysis_module)
-        
-        analyze_speech_bytes = speech_analysis_module.analyze_speech_bytes
-        SpeechAnalysisService = speech_analysis_module.SpeechAnalysisService
-        
-        # Initialize with correct models path
-        speech_service = SpeechAnalysisService(models_dir=os.path.join(ml_models_path, "models/speech"))
-        SPEECH_ANALYSIS_AVAILABLE = True
-        SPEECH_SERVICE_VERSION = "v1"
-        logging.info("✓ Using original speech analysis service v1")
-    else:
-        raise ImportError(f"No speech analysis service found. Checked paths: {[speech_service_v2_path, speech_service_path]}")
-        
-except (ImportError, AttributeError, Exception) as e:
-    logging.warning(f"Speech analysis not available: {e}")
-    logging.warning(f"ML models path: {ml_models_path}")
-    logging.warning(f"Python path includes: {sys.path}")
-    logging.warning("Check that speech analysis service files exist in the ml-models directory.")
+    from app.services.speech_service import SpeechService
+    speech_service = SpeechService()
+    SPEECH_ANALYSIS_AVAILABLE = speech_service.is_available()
+    SPEECH_SERVICE_VERSION = "v3-sklearn"
+    logging.info("✓ Speech analysis service loaded (sklearn SVM-RBF, 89.5% accuracy)")
+except Exception as e:
+    logging.warning(f"SpeechService not available: {e}")
     SPEECH_ANALYSIS_AVAILABLE = False
     SPEECH_SERVICE_VERSION = None
     speech_service = None
-    analyze_speech_bytes = None
-    SpeechAnalysisService = None
 
 # Speech analysis and handwriting analysis only - MRI analysis removed
 # MRI components removed to clean up space
@@ -116,12 +79,11 @@ router = APIRouter()
 def init_speech_service():
     """Initialize speech service if not already initialized"""
     global speech_service
-    if speech_service is None and SPEECH_ANALYSIS_AVAILABLE:
+    if speech_service is None:
         try:
-            # Try to initialize the service
-            if SpeechAnalysisService:
-                speech_service = SpeechAnalysisService(models_dir=os.path.join(ml_models_path, "models/speech"))
-                logging.info(f"✓ Initialized speech service {SPEECH_SERVICE_VERSION}")
+            from app.services.speech_service import SpeechService
+            speech_service = SpeechService()
+            logging.info(f"✓ Initialized speech service {SPEECH_SERVICE_VERSION}")
         except Exception as e:
             logging.error(f"Failed to initialize speech service: {e}")
 
@@ -232,18 +194,14 @@ async def speech_analysis_health():
             "version": None,
             "message": "Speech analysis service is not available",
             "dependencies_required": [
-                "tensorflow",
-                "librosa", 
-                "praat-parselmouth",
-                "numpy",
-                "pandas",
                 "scikit-learn",
-                "soundfile"
+                "numpy",
+                "joblib",
+                "librosa (optional, for audio feature extraction)"
             ],
             "recommendations": [
-                "Install required dependencies",
-                "Ensure model files are available",
-                "Check ml-models directory structure"
+                "Ensure model files are available in models/speech/",
+                "Check that speech_rf_model.pkl exists"
             ]
         }
     
@@ -256,40 +214,19 @@ async def speech_analysis_health():
                 "message": "Speech service not initialized"
             }
         
-        # Check if it's the enhanced service with system info
-        if hasattr(speech_service, 'get_system_info'):
-            # Enhanced service v2
-            system_info = speech_service.get_system_info()
-            model_loaded = system_info['model_loaded']
-            
-            return {
-                "available": True,
-                "version": SPEECH_SERVICE_VERSION,
-                "service_version": system_info.get('service_version', '2.0'),
-                "model_loaded": model_loaded,
-                "feature_extractor": system_info['feature_extractor'],
-                "compatibility": system_info.get('compatibility'),
-                "recommendations": system_info.get('recommendations', []),
-                "message": "Enhanced speech analysis service is available" if model_loaded else "Service available but model not loaded"
-            }
-        else:
-            # Original service v1
-            try:
-                model_loaded = speech_service.is_loaded or speech_service.load_models()
-            except:
-                model_loaded = False
-            
-            return {
-                "available": True,
-                "version": SPEECH_SERVICE_VERSION,
-                "service_version": "1.0",
-                "model_loaded": model_loaded,
-                "message": "Speech analysis service is available" if model_loaded else "Service available but model not loaded",
-                "recommendations": [
-                    "Consider upgrading to enhanced service v2 for better feature validation",
-                    "Install praat-parselmouth for improved feature extraction"
-                ]
-            }
+        system_info = speech_service.get_system_info()
+        model_loaded = system_info['model_loaded']
+        
+        return {
+            "available": True,
+            "version": SPEECH_SERVICE_VERSION,
+            "service_version": system_info.get('service_version', '3.0-sklearn'),
+            "model_loaded": model_loaded,
+            "model_type": system_info.get('model_type', 'SVM-RBF'),
+            "feature_extractor": system_info['feature_extractor'],
+            "recommendations": system_info.get('recommendations', []),
+            "message": f"Speech analysis service is available ({system_info.get('model_type', 'CNN+LSTM')})" if model_loaded else "Service available but model not loaded"
+        }
             
     except Exception as e:
         return {
@@ -1079,8 +1016,8 @@ async def get_multimodal_status():
         "available": MULTIMODAL_AVAILABLE,
         "modalities": {
             "dat_scan": dat_service is not None,
-            "handwriting": True,  # Assumed available
-            "voice": SPEECH_ANALYSIS_AVAILABLE
+            "handwriting": True,
+            "voice": speech_service is not None and speech_service.is_available()
         },
         "weights": {
             "dat": 0.50,

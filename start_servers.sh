@@ -27,23 +27,21 @@ sleep 1
 echo -e "\n${BLUE}📦 Starting Backend (FastAPI)...${NC}"
 cd "$BACKEND_DIR"
 
-if [ ! -d "ml_env" ]; then
+if [ ! -d "../ml_env_312" ]; then
     echo -e "${YELLOW}Creating virtual environment...${NC}"
-    python3 -m venv ml_env
+    python3 -m venv ../ml_env_312
 fi
 
 echo -e "${YELLOW}Activating virtual environment...${NC}"
-source ml_env/bin/activate
+source ../ml_env_312/bin/activate
 
-echo -e "${YELLOW}Installing backend dependencies (if needed)...${NC}"
-pip install --quiet --upgrade pip
-pip install --quiet -r requirements.txt 2>/dev/null || pip install --quiet fastapi uvicorn 'python-jose[cryptography]' 'passlib[bcrypt]' python-multipart sqlalchemy psycopg2-binary Pillow numpy tensorflow scikit-learn librosa soundfile email-validator python-dotenv pydantic-settings
+echo -e "${YELLOW}Backend dependencies are managed externally.${NC}"
 
 echo -e "${GREEN}✅ Backend dependencies ready${NC}"
 echo -e "${BLUE}Starting uvicorn server on http://localhost:8000${NC}"
 
 # Start backend in background
-nohup ./ml_env/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
+nohup ../ml_env_312/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
 BACKEND_PID=$!
 echo -e "${GREEN}✅ Backend started (PID: $BACKEND_PID)${NC}"
 
