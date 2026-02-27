@@ -22,18 +22,17 @@ import DaTAnalysis from "./pages/DaTAnalysis";
 import ComprehensiveAnalysis from "./pages/ComprehensiveAnalysis";
 import ProfilePage from "./pages/ProfilePage";
 import ReportsPage from "./pages/ReportsPage";
-import RecommendationsPage from "./pages/RecommendationsPage";import LongitudinalDashboard from './pages/LongitudinalDashboard';// Individual analysis pages kept only for demo routes
+import RecommendationsPage from "./pages/RecommendationsPage"; import LongitudinalDashboard from './pages/LongitudinalDashboard';// Individual analysis pages kept only for demo routes
 
 // Component to redirect to appropriate dashboard based on user role
 function DashboardRedirect() {
   const { state } = useAuth();
   const loc = useLocation();
   const hash = loc.hash || ''; // Preserve the hash (e.g. #analytics)
+  const role = state.user?.role?.toLowerCase();
 
-  if (state.user?.role === 'doctor') {
+  if (role === 'doctor') {
     return <Navigate to={`/doctor/dashboard${hash}`} replace />;
-  } else if (state.user?.role === 'patient') {
-    return <Navigate to={`/patient/dashboard${hash}`} replace />;
   } else {
     return <Navigate to={`/patient/dashboard${hash}`} replace />;
   }
