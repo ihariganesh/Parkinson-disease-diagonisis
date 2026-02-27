@@ -11,7 +11,8 @@ import {
   SparklesIcon,
   ChatBubbleLeftRightIcon,
   CpuChipIcon,
-  HomeIcon
+  HomeIcon,
+  CalendarIcon
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import { medicalService } from "../../services";
@@ -19,6 +20,7 @@ import { LoadingSpinner, Alert } from "../common";
 import type { MedicalData, DiagnosisReport } from "../../types";
 import ChatbotView from "./ChatbotView";
 import GenericMessaging from "../common/GenericMessaging";
+import AppointmentModule from "./AppointmentModule";
 
 const dataTypeConfig = {
   handwriting: {
@@ -62,14 +64,14 @@ export default function PatientDashboard() {
   const [error, setError] = useState("");
 
   // Parse hash to active tab (default to overview)
-  const initialTab = location.hash ? location.hash.replace('#', '') as 'overview' | 'chatbot' | 'messages' : 'overview';
-  const [activeTab, setActiveTab] = useState<"overview" | "chatbot" | "messages">(initialTab);
+  const initialTab = location.hash ? location.hash.replace('#', '') as 'overview' | 'chatbot' | 'messages' | 'appointments' : 'overview';
+  const [activeTab, setActiveTab] = useState<"overview" | "chatbot" | "messages" | "appointments">(initialTab);
 
   // Keep active tab in sync if location hash changes
   useEffect(() => {
     if (location.hash) {
-      const hashTab = location.hash.replace('#', '') as "overview" | "chatbot" | "messages";
-      if (['overview', 'chatbot', 'messages'].includes(hashTab)) {
+      const hashTab = location.hash.replace('#', '') as "overview" | "chatbot" | "messages" | "appointments";
+      if (['overview', 'chatbot', 'messages', 'appointments'].includes(hashTab)) {
         setActiveTab(hashTab);
       }
     } else {
@@ -77,7 +79,7 @@ export default function PatientDashboard() {
     }
   }, [location.hash]);
 
-  const handleTabChange = (tabId: "overview" | "chatbot" | "messages") => {
+  const handleTabChange = (tabId: "overview" | "chatbot" | "messages" | "appointments") => {
     setActiveTab(tabId);
     // Update hash in URL
     navigate(`/patient/dashboard#${tabId}`, { replace: true });
@@ -157,6 +159,7 @@ export default function PatientDashboard() {
       <div className="flex space-x-4 border-b border-gray-200 mb-6 mt-4">
         {[
           { id: "overview", label: "Overview", icon: HomeIcon },
+          { id: "appointments", label: "Appointments", icon: CalendarIcon },
           { id: "chatbot", label: "AI Chatbot", icon: CpuChipIcon },
           { id: "messages", label: "Messages", icon: ChatBubbleLeftRightIcon }
         ].map(tab => (
@@ -425,6 +428,14 @@ export default function PatientDashboard() {
             <div className="max-w-4xl mx-auto">
               <GenericMessaging />
             </div>
+          </div>
+        )}
+
+        {activeTab === "appointments" && (
+          <div className="animate-fade-in">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Appointments</h2>
+            <p className="text-gray-600 mb-6">Manage your upcoming checkups and consultations.</p>
+            <AppointmentModule />
           </div>
         )}
       </div>
