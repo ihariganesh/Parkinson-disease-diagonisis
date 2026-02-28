@@ -1,6 +1,7 @@
 import type { DiagnosisReport } from '../../types';
 import { XMarkIcon, ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
 import { useEffect } from 'react';
+import CountUp from '../common/CountUp';
 
 interface ReportDetailsModalProps {
   report: DiagnosisReport;
@@ -56,15 +57,15 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
     const voiceConfidence = multimodalAnalysis.voice?.confidence || 0;
 
     const avgConfidence = (datConfidence + handwritingConfidence + voiceConfidence) / 3;
-    
+
     // Calculate which modality needs most improvement
     const confidences = [
       { name: 'DaT Scan', value: datConfidence, icon: '🧠' },
       { name: 'Handwriting', value: handwritingConfidence, icon: '✍️' },
       { name: 'Voice', value: voiceConfidence, icon: '🎤' }
     ];
-    
-    const lowestConfidence = confidences.reduce((min, curr) => 
+
+    const lowestConfidence = confidences.reduce((min, curr) =>
       curr.value < min.value ? curr : min
     );
 
@@ -85,7 +86,7 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
     action: string;
   }> => {
     if (!metrics) return [];
-    
+
     const recommendations: Array<{
       priority: 'high' | 'medium' | 'low';
       title: string;
@@ -221,8 +222,8 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-medium text-gray-700">Overall Confidence</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {(report.confidence * 100).toFixed(1)}%
+                  <p className="text-lg font-bold text-gray-900 flex justify-end">
+                    <CountUp to={Number((report.confidence * 100).toFixed(1))} direction="up" duration={2} />%
                   </p>
                 </div>
                 <div className="w-full bg-gray-300 rounded-full h-4">
@@ -237,8 +238,8 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-medium text-gray-700">Multimodal Fusion Score</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {(report.fusionScore * 100).toFixed(1)}%
+                  <p className="text-lg font-bold text-gray-900 flex justify-end">
+                    <CountUp to={Number((report.fusionScore * 100).toFixed(1))} direction="up" duration={2} />%
                   </p>
                 </div>
                 <div className="w-full bg-gray-300 rounded-full h-4">
@@ -268,8 +269,8 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
                     <div className="space-y-2">
                       <div>
                         <p className="text-xs text-gray-600">Confidence</p>
-                        <p className="text-lg font-bold text-indigo-700">
-                          {(multimodalAnalysis.dat_scan.confidence * 100).toFixed(1)}%
+                        <p className="text-lg font-bold text-indigo-700 flex">
+                          <CountUp to={Number((multimodalAnalysis.dat_scan.confidence * 100).toFixed(1))} direction="up" duration={2} />%
                         </p>
                       </div>
                       <div>
@@ -296,8 +297,8 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
                     <div className="space-y-2">
                       <div>
                         <p className="text-xs text-gray-600">Confidence</p>
-                        <p className="text-lg font-bold text-purple-700">
-                          {(multimodalAnalysis.handwriting.confidence * 100).toFixed(1)}%
+                        <p className="text-lg font-bold text-purple-700 flex">
+                          <CountUp to={Number((multimodalAnalysis.handwriting.confidence * 100).toFixed(1))} direction="up" duration={2} />%
                         </p>
                       </div>
                       <div>
@@ -324,8 +325,8 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
                     <div className="space-y-2">
                       <div>
                         <p className="text-xs text-gray-600">Confidence</p>
-                        <p className="text-lg font-bold text-pink-700">
-                          {(multimodalAnalysis.voice.confidence * 100).toFixed(1)}%
+                        <p className="text-lg font-bold text-pink-700 flex">
+                          <CountUp to={Number((multimodalAnalysis.voice.confidence * 100).toFixed(1))} direction="up" duration={2} />%
                         </p>
                       </div>
                       <div>
@@ -394,7 +395,7 @@ const ReportDetailsModal = ({ report, onClose, onExport, onShare }: ReportDetail
                     );
                   })}
                 </div>
-                
+
                 {/* Quick Tips */}
                 <div className="mt-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-4">
                   <h4 className="font-semibold text-indigo-900 mb-2">🎯 Quick Tips to Improve Your Results</h4>

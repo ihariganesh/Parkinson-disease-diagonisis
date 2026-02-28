@@ -138,3 +138,19 @@ async def get_patients(db: Session = Depends(get_db)):
 async def get_patient(patient_id: int, db: Session = Depends(get_db)):
     """Get specific patient - placeholder endpoint"""
     return {"message": f"Patient {patient_id} endpoint - implementation needed"}
+
+
+@router.get("/{patient_id}/progression")
+async def get_patient_progression(
+    patient_id: str, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get longitudinal progression metrics for a specific patient.
+    """
+    # Enforce access control if needed.
+    from app.services.progression_engine import ProgressionEngine
+    engine = ProgressionEngine(db)
+    metrics = engine.get_progression_metrics(patient_id)
+    return metrics

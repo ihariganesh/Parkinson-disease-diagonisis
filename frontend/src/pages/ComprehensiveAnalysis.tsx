@@ -26,6 +26,7 @@ import {
   DocumentTextIcon,
   XCircleIcon,
 } from '@heroicons/react/24/outline';
+import CountUp from '../components/common/CountUp';
 
 import {
   analyze_dat_scan,
@@ -359,7 +360,7 @@ export default function ComprehensiveAnalysis() {
             {datResult?.result && (
               <div className="mt-3 p-3 bg-indigo-50 rounded-lg text-sm border border-indigo-200">
                 <p className="font-semibold text-indigo-900">{datResult.result.prediction}</p>
-                <p className="text-gray-600">Confidence: {(datResult.result.confidence * 100).toFixed(1)}%</p>
+                <p className="text-gray-600 flex">Confidence: <span className="ml-1 flex"><CountUp to={Number((datResult.result.confidence * 100).toFixed(1))} direction="up" duration={2} />%</span></p>
                 <p className="text-gray-600">Risk: {datResult.result.risk_level}</p>
               </div>
             )}
@@ -440,8 +441,8 @@ export default function ComprehensiveAnalysis() {
                   {waveResult.prediction ?? 'Result received'}
                 </p>
                 {waveResult.confidence !== undefined && (
-                  <p className="text-gray-600">
-                    Confidence: {(waveResult.confidence * 100).toFixed(1)}%
+                  <p className="text-gray-600 flex">
+                    Confidence: <span className="ml-1 flex"><CountUp to={Number((waveResult.confidence * 100).toFixed(1))} direction="up" duration={2} />%</span>
                   </p>
                 )}
               </div>
@@ -503,8 +504,8 @@ export default function ComprehensiveAnalysis() {
                   {voiceResult.analysis_result.prediction ?? 'Analysis complete'}
                 </p>
                 {voiceResult.analysis_result.confidence !== undefined && (
-                  <p className="text-gray-600">
-                    Confidence: {(voiceResult.analysis_result.confidence * 100).toFixed(1)}%
+                  <p className="text-gray-600 flex">
+                    Confidence: <span className="ml-1 flex"><CountUp to={Number((voiceResult.analysis_result.confidence * 100).toFixed(1))} direction="up" duration={2} />%</span>
                   </p>
                 )}
                 {voiceResult.analysis_result.risk_level && (
@@ -574,8 +575,8 @@ export default function ComprehensiveAnalysis() {
                         style={{ width: `${compResult.fusion_results.agreement_score * 100}%` }}
                       />
                     </div>
-                    <span className="font-bold">
-                      {(compResult.fusion_results.agreement_score * 100).toFixed(1)}%
+                    <span className="font-bold flex">
+                      <CountUp to={Number((compResult.fusion_results.agreement_score * 100).toFixed(1))} direction="up" duration={2} />%
                     </span>
                   </div>
                 </div>
@@ -594,11 +595,11 @@ export default function ComprehensiveAnalysis() {
                   ) : (
                     <>
                       <p className="text-2xl font-bold mb-1">{compResult.modality_results.dat.prediction}</p>
-                      <p className="text-sm text-gray-600">
-                        Probability: {((compResult.modality_results.dat.probability ?? 0) * 100).toFixed(1)}%
+                      <p className="text-sm text-gray-600 flex gap-1">
+                        Probability: <CountUp to={Number(((compResult.modality_results.dat.probability ?? 0) * 100).toFixed(1))} direction="up" duration={2} />%
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Confidence: {((compResult.modality_results.dat.confidence ?? 0) * 100).toFixed(1)}%
+                      <p className="text-sm text-gray-600 flex gap-1">
+                        Confidence: <CountUp to={Number(((compResult.modality_results.dat.confidence ?? 0) * 100).toFixed(1))} direction="up" duration={2} />%
                       </p>
                     </>
                   )}
@@ -614,11 +615,11 @@ export default function ComprehensiveAnalysis() {
                   ) : (
                     <>
                       <p className="text-2xl font-bold mb-1">{compResult.modality_results.handwriting.prediction}</p>
-                      <p className="text-sm text-gray-600">
-                        Probability: {((compResult.modality_results.handwriting.probability ?? 0) * 100).toFixed(1)}%
+                      <p className="text-sm text-gray-600 flex gap-1">
+                        Probability: <CountUp to={Number(((compResult.modality_results.handwriting.probability ?? 0) * 100).toFixed(1))} direction="up" duration={2} />%
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Confidence: {((compResult.modality_results.handwriting.confidence ?? 0) * 100).toFixed(1)}%
+                      <p className="text-sm text-gray-600 flex gap-1">
+                        Confidence: <CountUp to={Number(((compResult.modality_results.handwriting.confidence ?? 0) * 100).toFixed(1))} direction="up" duration={2} />%
                       </p>
                     </>
                   )}
@@ -634,11 +635,11 @@ export default function ComprehensiveAnalysis() {
                   ) : (
                     <>
                       <p className="text-2xl font-bold mb-1">{compResult.modality_results.voice.prediction}</p>
-                      <p className="text-sm text-gray-600">
-                        Probability: {((compResult.modality_results.voice.probability ?? 0) * 100).toFixed(1)}%
+                      <p className="text-sm text-gray-600 flex gap-1">
+                        Probability: <CountUp to={Number(((compResult.modality_results.voice.probability ?? 0) * 100).toFixed(1))} direction="up" duration={2} />%
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Confidence: {((compResult.modality_results.voice.confidence ?? 0) * 100).toFixed(1)}%
+                      <p className="text-sm text-gray-600 flex gap-1">
+                        Confidence: <CountUp to={Number(((compResult.modality_results.voice.confidence ?? 0) * 100).toFixed(1))} direction="up" duration={2} />%
                       </p>
                     </>
                   )}

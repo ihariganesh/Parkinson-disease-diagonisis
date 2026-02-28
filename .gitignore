@@ -128,3 +128,7 @@ Parkinson/
 
 # Jupyter Notebooks checkpoints
 .ipynb_checkpoints/
+.local_uv/
+frontend/test-results/
+ml-models/models/
+**/*.keras

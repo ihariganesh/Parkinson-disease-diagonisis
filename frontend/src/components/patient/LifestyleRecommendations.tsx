@@ -1,4 +1,5 @@
 import React from 'react';
+import CountUp from '../common/CountUp';
 import {
   HeartIcon,
   SparklesIcon,
@@ -30,7 +31,7 @@ interface LifestyleRecommendationsProps {
   generatedAt?: string;
 }
 
-const categoryIcons: { [key: string]: React.ElementType } = {
+const categoryIcons: Record<string, any> = {
   exercise: HeartIcon,
   nutrition: SparklesIcon,
   mental_health: BeakerIcon,
@@ -87,8 +88,8 @@ const LifestyleRecommendations: React.FC<LifestyleRecommendationsProps> = ({
             <div>
               <p className="text-sm text-gray-600 mb-1">Based on your diagnosis:</p>
               <p className="text-lg font-semibold text-gray-900">{diagnosis}</p>
-              <p className="text-sm text-gray-600 mt-1">
-                Confidence: <span className="font-medium">{confidence.toFixed(1)}%</span>
+              <p className="text-sm text-gray-600 mt-1 flex items-center">
+                Confidence: <span className="font-medium ml-1 flex"><CountUp to={Number(confidence.toFixed(1))} direction="up" duration={2} />%</span>
               </p>
             </div>
             {generatedAt && (

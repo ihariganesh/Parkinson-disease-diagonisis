@@ -1,5 +1,6 @@
 // HandwritingResults component
 import { CheckCircle, AlertTriangle, Activity, TrendingUp, Info } from 'lucide-react';
+import CountUp from '../common/CountUp';
 
 interface AnalysisResult {
   id: string;
@@ -24,10 +25,10 @@ interface HandwritingResultsProps {
   onNewAnalysis: () => void;
 }
 
-const HandwritingResults: React.FC<HandwritingResultsProps> = ({ 
-  result, 
-  onClose, 
-  onNewAnalysis 
+const HandwritingResults: React.FC<HandwritingResultsProps> = ({
+  result,
+  onClose,
+  onNewAnalysis
 }) => {
   const isHealthy = result.prediction === 'healthy';
   const isInconclusive = result.prediction === 'inconclusive';
@@ -113,8 +114,8 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
             {isInconclusive
               ? 'Result Inconclusive'
               : isHealthy
-              ? 'Normal Patterns Detected'
-              : 'Irregular Patterns Detected'}
+                ? 'Normal Patterns Detected'
+                : 'Irregular Patterns Detected'}
           </h3>
           <p className="text-gray-600 text-lg leading-relaxed">
             {getResultMessage()}
@@ -127,8 +128,8 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
             <span className="text-sm font-medium text-gray-700">
               Confidence Level
             </span>
-            <span className="text-sm font-bold text-gray-900">
-              {confidencePercentage}%
+            <span className="text-sm font-bold text-gray-900 flex">
+              <CountUp to={confidencePercentage} direction="up" duration={2} />%
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
@@ -152,8 +153,8 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
                     <TrendingUp className="w-4 h-4 text-blue-600" />
                     <span className="font-medium text-gray-900">Smoothness</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    {(result.analysis_details.smoothness * 100).toFixed(1)}%
+                  <div className="text-2xl font-bold text-gray-900 mb-1 flex">
+                    <CountUp to={Number((result.analysis_details.smoothness * 100).toFixed(1))} direction="up" duration={2} />%
                   </div>
                   <p className="text-sm text-gray-600">
                     Measures how smooth and continuous your drawing strokes are
@@ -167,8 +168,8 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
                     <Activity className="w-4 h-4 text-orange-600" />
                     <span className="font-medium text-gray-900">Tremor Level</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    {(result.analysis_details.tremor_ratio * 100).toFixed(1)}%
+                  <div className="text-2xl font-bold text-gray-900 mb-1 flex">
+                    <CountUp to={Number((result.analysis_details.tremor_ratio * 100).toFixed(1))} direction="up" duration={2} />%
                   </div>
                   <p className="text-sm text-gray-600">
                     Indicates irregularities or shaking in your drawing
@@ -182,8 +183,8 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
                     <Activity className="w-4 h-4 text-purple-600" />
                     <span className="font-medium text-gray-900">Pressure Variation</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    {(result.analysis_details.pressure_variation * 100).toFixed(1)}%
+                  <div className="text-2xl font-bold text-gray-900 mb-1 flex">
+                    <CountUp to={Number((result.analysis_details.pressure_variation * 100).toFixed(1))} direction="up" duration={2} />%
                   </div>
                   <p className="text-sm text-gray-600">
                     Shows how consistent your writing pressure is
@@ -197,8 +198,8 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
                     <Info className="w-4 h-4 text-gray-600" />
                     <span className="font-medium text-gray-900">Drawing Complexity</span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    {result.analysis_details.contour_count}
+                  <div className="text-2xl font-bold text-gray-900 mb-1 flex">
+                    <CountUp to={result.analysis_details.contour_count} direction="up" duration={2} />
                   </div>
                   <p className="text-sm text-gray-600">
                     Number of distinct drawing segments detected
@@ -219,9 +220,9 @@ const HandwritingResults: React.FC<HandwritingResultsProps> = ({
               Important Medical Disclaimer
             </h4>
             <p className="text-blue-800 text-sm leading-relaxed">
-              This analysis is for screening purposes only and should not be used as a substitute 
-              for professional medical diagnosis. If you have concerns about Parkinson's disease 
-              or any neurological symptoms, please consult with a qualified healthcare professional 
+              This analysis is for screening purposes only and should not be used as a substitute
+              for professional medical diagnosis. If you have concerns about Parkinson's disease
+              or any neurological symptoms, please consult with a qualified healthcare professional
               or neurologist for proper evaluation and diagnosis.
             </p>
           </div>

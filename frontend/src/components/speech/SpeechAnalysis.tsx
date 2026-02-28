@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Mic, Upload, Play, Pause, Square, Trash2, Download, AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, Loading } from '../common';
+import CountUp from '../common/CountUp';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface SpeechAnalysisResult {
@@ -37,52 +38,52 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
   const startRecording = async () => {
     try {
       setError(null);
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           sampleRate: 44100
-        } 
+        }
       });
-      
+
       streamRef.current = stream;
-      
+
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
       });
-      
+
       mediaRecorderRef.current = mediaRecorder;
-      
+
       const chunks: BlobPart[] = [];
-      
+
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunks.push(event.data);
         }
       };
-      
+
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
         setRecordedBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
-        
+
         // Clean up stream
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());
           streamRef.current = null;
         }
       };
-      
+
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
-      
+
       // Start timer
       intervalRef.current = window.setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
-      
+
     } catch (err) {
       setError('Could not access microphone. Please check permissions.');
       console.error('Error accessing microphone:', err);
@@ -114,7 +115,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
-      
+
       if (intervalRef.current) {
         window.clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -129,7 +130,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
     setAnalysisResult(null);
     setError(null);
     setIsPlaying(false);
-    
+
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -194,7 +195,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
 
     try {
       const formData = new FormData();
-      
+
       // Determine the filename based on whether it's a File (uploaded) or Blob (recorded)
       let filename: string;
       if (recordedBlob instanceof File) {
@@ -204,11 +205,11 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
         // Recorded blob - use default recording name
         filename = 'speech-recording.webm';
       }
-      
+
       formData.append('file', recordedBlob, filename);
 
       // Use demo endpoint if not authenticated
-      const endpoint = state.isAuthenticated 
+      const endpoint = state.isAuthenticated
         ? '/api/v1/analysis/speech/analyze'
         : '/api/v1/analysis/speech/demo-analyze';
 
@@ -232,7 +233,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
           // First, get the response text
           const responseText = await response.text();
           console.log('Error response text:', responseText);
-          
+
           // Try to parse as JSON
           try {
             const errorData = JSON.parse(responseText);
@@ -258,7 +259,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
         console.error('Response that failed to parse:', responseText);
         throw new Error('Invalid response format from server');
       }
-      
+
       if (data.success && data.analysis_result) {
         setAnalysisResult(data.analysis_result);
         onAnalysisComplete?.(data.analysis_result);
@@ -293,7 +294,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Speech Analysis</h2>
-        
+
         {error && (
           <Alert type="error" message={error} className="mb-4" />
         )}
@@ -303,7 +304,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
           {/* Record New Audio */}
           <div className="border rounded-lg p-4">
             <h3 className="text-lg font-semibold mb-4">Record New Audio</h3>
-            
+
             <div className="flex items-center gap-4 mb-4">
               {!isRecording ? (
                 <button
@@ -333,7 +334,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
                       Resume
                     </button>
                   )}
-                  
+
                   <button
                     onClick={stopRecording}
                     className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
@@ -343,7 +344,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
                   </button>
                 </div>
               )}
-              
+
               {(isRecording || isPaused) && (
                 <div className="flex items-center gap-2">
                   <div className={`w-3 h-3 rounded-full ${isRecording && !isPaused ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`} />
@@ -360,7 +361,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
           {/* Upload Audio File */}
           <div className="border rounded-lg p-4">
             <h3 className="text-lg font-semibold mb-4">Upload Audio File</h3>
-            
+
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors">
                 <Upload className="w-5 h-5" />
@@ -373,7 +374,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
                   disabled={isAnalyzing}
                 />
               </label>
-              
+
               <span className="text-sm text-gray-600">
                 Supported formats: WAV, MP3, M4A, FLAC, OGG (max 50MB)
               </span>
@@ -384,7 +385,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
           {recordedBlob && (
             <div className="border rounded-lg p-4">
               <h3 className="text-lg font-semibold mb-4">Audio Preview</h3>
-              
+
               <div className="flex items-center gap-4 mb-4">
                 <button
                   onClick={playAudio}
@@ -394,7 +395,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
                   {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                   {isPlaying ? 'Pause' : 'Play'}
                 </button>
-                
+
                 <button
                   onClick={downloadRecording}
                   className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
@@ -403,7 +404,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
                   <Download className="w-5 h-5" />
                   Download
                 </button>
-                
+
                 <button
                   onClick={clearRecording}
                   className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
@@ -440,7 +441,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
                 <CheckCircle className="w-5 h-5 text-green-500" />
                 Analysis Results
               </h3>
-              
+
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -448,22 +449,22 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
                     <p className="text-lg">
                       <span className="font-bold">{analysisResult.class_label}</span>
                     </p>
-                    <p className="text-sm text-gray-600">
-                      Probability: {(analysisResult.prediction_probability * 100).toFixed(1)}%
+                    <p className="text-sm text-gray-600 flex">
+                      Probability: <CountUp to={Number((analysisResult.prediction_probability * 100).toFixed(1))} direction="up" duration={2} className="ml-1" />%
                     </p>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-gray-800 mb-2">Risk Level</h4>
                     <p className={`text-lg font-bold ${getRiskColor(analysisResult.risk_level)}`}>
                       {analysisResult.risk_level}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      Confidence: {(analysisResult.confidence * 100).toFixed(1)}%
+                    <p className="text-sm text-gray-600 flex">
+                      Confidence: <CountUp to={Number((analysisResult.confidence * 100).toFixed(1))} direction="up" duration={2} className="ml-1" />%
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
                     <AlertCircle className="w-4 h-4" />
@@ -474,7 +475,7 @@ export const SpeechAnalysis: React.FC<SpeechAnalysisProps> = ({ onAnalysisComple
                   </p>
                 </div>
               </div>
-              
+
               <div className="mt-4 text-xs text-gray-500">
                 Analysis completed on: {new Date(analysisResult.analysis_timestamp).toLocaleString()}
               </div>

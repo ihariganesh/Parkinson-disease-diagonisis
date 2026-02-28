@@ -11,6 +11,7 @@ import { LoginForm, RegisterForm, ProtectedRoute } from "./components/auth";
 import PatientDashboard from "./components/patient/PatientDashboard";
 import DataUpload from "./components/patient/DataUpload";
 import { DoctorDashboard } from "./components/doctor";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import LandingPage from "./pages/LandingPage";
 import About from "./pages/About";
 import Unauthorized from "./pages/Unauthorized";
@@ -22,7 +23,7 @@ import DaTAnalysis from "./pages/DaTAnalysis";
 import ComprehensiveAnalysis from "./pages/ComprehensiveAnalysis";
 import ProfilePage from "./pages/ProfilePage";
 import ReportsPage from "./pages/ReportsPage";
-import RecommendationsPage from "./pages/RecommendationsPage";import LongitudinalDashboard from './pages/LongitudinalDashboard';// Individual analysis pages kept only for demo routes
+import RecommendationsPage from "./pages/RecommendationsPage"; import LongitudinalDashboard from './pages/LongitudinalDashboard';// Individual analysis pages kept only for demo routes
 
 // Component to redirect to appropriate dashboard based on user role
 function DashboardRedirect() {
@@ -200,7 +201,11 @@ function AuthCheck() {
     return <Navigate to="/login" replace />;
   }
 
-  return <AppRoutes />;
+  return (
+    <ErrorBoundary>
+      <AppRoutes />
+    </ErrorBoundary>
+  );
 }
 
 function App() {

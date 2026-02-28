@@ -18,6 +18,7 @@ import {
   ShieldCheckIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import CountUp from '../components/common/CountUp';
 
 interface RecommendationDetail {
   category: string;
@@ -319,8 +320,8 @@ const RecommendationsPage = () => {
                     <CheckCircleIcon className="inline h-3.5 w-3.5 text-green-500 mr-1" />
                     Detected: <strong className="text-gray-600">{selectedStageInfo.label}</strong>
                   </span>
-                  <span>
-                    Confidence: <strong className="text-gray-600">{(diagnosisConfidence * 100).toFixed(1)}%</strong>
+                  <span className="flex">
+                    Confidence: <strong className="text-gray-600 ml-1 flex"><CountUp to={Number((diagnosisConfidence * 100).toFixed(1))} direction="up" duration={2} />%</strong>
                   </span>
                   {diagnosisDate && (
                     <span>
@@ -493,8 +494,8 @@ const RecommendationsPage = () => {
                       ⚠️ Llama Offline
                     </span>
                   )}
-                  <span className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-1 text-sm font-medium">
-                    {(result.model_accuracy * 100).toFixed(1)}% Accuracy
+                  <span className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-1 text-sm font-medium flex items-center">
+                    <CountUp to={Number((result.model_accuracy * 100).toFixed(1))} direction="up" duration={2} className="mr-1" />% Accuracy
                   </span>
                 </div>
               </div>
@@ -654,7 +655,7 @@ const RecommendationsPage = () => {
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
               <CpuChipIcon className="h-5 w-5 text-green-600" />
               <p className="text-sm text-green-800">
-                ML model trained on <strong>12,000 health profiles</strong> ({(result.model_accuracy * 100).toFixed(1)}% accuracy)
+                ML model trained on <strong>12,000 health profiles</strong> (<span className="inline-flex"><CountUp to={Number((result.model_accuracy * 100).toFixed(1))} direction="up" duration={2} />% accuracy</span>)
                 {result.llama_validated && ' → Validated by Llama 3.2'}
                 . PD stage auto-detected from your latest diagnosis.
               </p>

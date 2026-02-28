@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 interface LoadingSpinnerProps {
   size?: "sm" | "md" | "lg";
-  color?: "blue" | "gray" | "white";
+  color?: "blue" | "gray" | "white" | "currentColor";
   className?: string;
 }
 
@@ -21,6 +21,7 @@ export function LoadingSpinner({
     blue: "text-blue-600",
     gray: "text-gray-400",
     white: "text-white",
+    currentColor: "text-current",
   };
 
   return (

@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, Brain, AlertCircle, CheckCircle, FileImage, X, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import CountUp from '../components/common/CountUp';
 
 interface PredictionResult {
   prediction: string;
@@ -201,8 +202,8 @@ const DaTAnalysis: React.FC = () => {
             {/* Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
-                  ? 'border-indigo-500 bg-indigo-50'
-                  : 'border-gray-300 hover:border-indigo-400'
+                ? 'border-indigo-500 bg-indigo-50'
+                : 'border-gray-300 hover:border-indigo-400'
                 }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -277,8 +278,8 @@ const DaTAnalysis: React.FC = () => {
               onClick={handleAnalyze}
               disabled={files.length < 5 || uploading}
               className={`w-full mt-6 py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${files.length < 5 || uploading
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
                 }`}
             >
               {uploading ? (
@@ -338,8 +339,8 @@ const DaTAnalysis: React.FC = () => {
                   <div className="mb-3">
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-600">Confidence:</span>
-                      <span className="font-semibold text-gray-800">
-                        {(result.confidence * 100).toFixed(1)}%
+                      <span className="font-semibold text-gray-800 flex">
+                        <CountUp to={Number((result.confidence * 100).toFixed(1))} direction="up" duration={2} />%
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
@@ -374,8 +375,8 @@ const DaTAnalysis: React.FC = () => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-gray-600">Healthy:</span>
-                        <span className="font-semibold text-green-600">
-                          {(result.probability_healthy * 100).toFixed(1)}%
+                        <span className="font-semibold text-green-600 flex">
+                          <CountUp to={Number((result.probability_healthy * 100).toFixed(1))} direction="up" duration={2} />%
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
@@ -388,8 +389,8 @@ const DaTAnalysis: React.FC = () => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-gray-600">Parkinson's:</span>
-                        <span className="font-semibold text-red-600">
-                          {(result.probability_parkinson * 100).toFixed(1)}%
+                        <span className="font-semibold text-red-600 flex">
+                          <CountUp to={Number((result.probability_parkinson * 100).toFixed(1))} direction="up" duration={2} />%
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">

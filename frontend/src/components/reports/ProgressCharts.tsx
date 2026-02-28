@@ -1,4 +1,5 @@
 import type { DiagnosisReport } from '../../types';
+import CountUp from '../common/CountUp';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -152,26 +153,25 @@ const ProgressCharts = ({ reports }: ProgressChartsProps) => {
           <div className="mt-4 grid grid-cols-3 gap-4 text-center">
             <div className="bg-blue-50 rounded p-3">
               <p className="text-xs text-gray-600">Latest</p>
-              <p className="text-lg font-bold text-blue-700">
-                {(sortedReports[sortedReports.length - 1].confidence * 100).toFixed(1)}%
+              <p className="text-lg font-bold text-blue-700 flex justify-center">
+                <CountUp to={Number((sortedReports[sortedReports.length - 1].confidence * 100).toFixed(1))} direction="up" duration={2} />%
               </p>
             </div>
             <div className="bg-green-50 rounded p-3">
               <p className="text-xs text-gray-600">Average</p>
-              <p className="text-lg font-bold text-green-700">
-                {(
+              <p className="text-lg font-bold text-green-700 flex justify-center">
+                <CountUp to={Number((
                   sortedReports.reduce((acc, r) => acc + r.confidence, 0) /
                   sortedReports.length *
                   100
-                ).toFixed(1)}
-                %
+                ).toFixed(1))} direction="up" duration={2} />%
               </p>
             </div>
             <div className="bg-purple-50 rounded p-3">
               <p className="text-xs text-gray-600">Trend</p>
               <p className="text-lg font-bold text-purple-700">
                 {sortedReports[sortedReports.length - 1].confidence >
-                sortedReports[0].confidence
+                  sortedReports[0].confidence
                   ? '📈 Up'
                   : '📉 Down'}
               </p>
@@ -204,8 +204,8 @@ const ProgressCharts = ({ reports }: ProgressChartsProps) => {
                 {sortedReports[sortedReports.length - 1].stage === sortedReports[0].stage
                   ? '→ Stable'
                   : sortedReports[sortedReports.length - 1].stage > sortedReports[0].stage
-                  ? '⚠️ Higher'
-                  : '✓ Lower'}
+                    ? '⚠️ Higher'
+                    : '✓ Lower'}
               </p>
             </div>
           </div>
@@ -223,19 +223,18 @@ const ProgressCharts = ({ reports }: ProgressChartsProps) => {
             <div className="grid grid-cols-4 gap-4 text-center">
               <div>
                 <p className="text-xs text-gray-600">Latest Score</p>
-                <p className="text-xl font-bold text-blue-700">
-                  {(sortedReports[sortedReports.length - 1].fusionScore * 100).toFixed(1)}%
+                <p className="text-xl font-bold text-blue-700 flex justify-center">
+                  <CountUp to={Number((sortedReports[sortedReports.length - 1].fusionScore * 100).toFixed(1))} direction="up" duration={2} />%
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-600">Average Score</p>
-                <p className="text-xl font-bold text-green-700">
-                  {(
+                <p className="text-xl font-bold text-green-700 flex justify-center">
+                  <CountUp to={Number((
                     sortedReports.reduce((acc, r) => acc + r.fusionScore, 0) /
                     sortedReports.length *
                     100
-                  ).toFixed(1)}
-                  %
+                  ).toFixed(1))} direction="up" duration={2} />%
                 </p>
               </div>
               <div>
@@ -248,7 +247,7 @@ const ProgressCharts = ({ reports }: ProgressChartsProps) => {
                   {Math.ceil(
                     (new Date(sortedReports[sortedReports.length - 1].createdAt).getTime() -
                       new Date(sortedReports[0].createdAt).getTime()) /
-                      (1000 * 60 * 60 * 24)
+                    (1000 * 60 * 60 * 24)
                   )}{' '}
                   days
                 </p>

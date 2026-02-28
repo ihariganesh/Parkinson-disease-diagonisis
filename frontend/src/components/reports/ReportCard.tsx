@@ -1,4 +1,5 @@
 import type { DiagnosisReport } from '../../types';
+import CountUp from '../common/CountUp';
 import {
   CheckCircleIcon,
   ArrowDownTrayIcon,
@@ -96,7 +97,7 @@ const ReportCard = ({ report, onView, onExport, onShare, onDelete }: ReportCardP
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Confidence Score</span>
-            <span className="text-sm font-bold text-gray-900">{confidencePercentage}%</span>
+            <span className="text-sm font-bold text-gray-900 flex"><CountUp to={Number(confidencePercentage)} direction="up" duration={2} />%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
             <div
@@ -132,8 +133,8 @@ const ReportCard = ({ report, onView, onExport, onShare, onDelete }: ReportCardP
           <div className="bg-gray-50 rounded p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Fusion Score</span>
-              <span className="text-lg font-bold text-gray-900">
-                {(report.fusionScore * 100).toFixed(1)}%
+              <span className="text-lg font-bold text-gray-900 flex">
+                <CountUp to={Number((report.fusionScore * 100).toFixed(1))} direction="up" duration={2} />%
               </span>
             </div>
           </div>
