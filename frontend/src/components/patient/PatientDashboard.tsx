@@ -14,6 +14,7 @@ import type { MedicalData, DiagnosisReport } from "../../types";
 import ChatbotView from "./ChatbotView";
 import GenericMessaging from "../common/GenericMessaging";
 import MagicBento from "../common/MagicBento";
+import LiquidEther from "../common/ReactBits/LiquidEther";
 
 const dataTypeConfig = {
   handwriting: { icon: PencilIcon, title: "Handwriting", color: "text-purple-600", bgColor: "bg-purple-100" },
@@ -85,9 +86,30 @@ export default function PatientDashboard() {
   }
 
   return (
-    <div className="flex bg-slate-50 font-sans min-h-[calc(100vh-4rem)]">
+    <div className="flex bg-slate-50/80 backdrop-blur-3xl font-sans min-h-[calc(100vh-4rem)] relative">
+      {/* Full Page Liquid Ether Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
+        <LiquidEther
+          colors={['#5227FF', '#1c71d8', '#2ec27e']}
+          mouseForce={20}
+          cursorSize={100}
+          isViscous
+          viscous={30}
+          iterationsViscous={32}
+          iterationsPoisson={32}
+          resolution={0.5}
+          isBounce={false}
+          autoDemo
+          autoSpeed={0.5}
+          autoIntensity={2.2}
+          takeoverDuration={0.25}
+          autoResumeDelay={3000}
+          autoRampDuration={0.6}
+        />
+      </div>
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10 pointer-events-auto">
         {/* Top Header */}
         <header className="bg-white border-b border-slate-200 flex items-center justify-between px-8 py-5 shadow-sm z-10 sticky top-0">
           <div className="flex items-center gap-4">
@@ -109,7 +131,7 @@ export default function PatientDashboard() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 sm:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-transparent p-4 sm:p-8">
           {error && <Alert type="error" message={error} onClose={() => setError("")} className="mb-6 shadow-sm rounded-xl" />}
 
           {/* OVERVIEW TAB */}
@@ -117,9 +139,31 @@ export default function PatientDashboard() {
             <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
 
               {/* Comprehensive Analysis Banner CTA */}
-              <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 rounded-3xl p-8 sm:p-10 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-                <div className="relative z-10 grid lg:grid-cols-5 gap-8 items-center">
+              <div className="bg-indigo-950 rounded-3xl p-8 sm:p-10 text-white shadow-xl relative overflow-hidden min-h-[400px] flex items-center">
+                {/* Liquid Ether Background */}
+                <div className="absolute inset-0 z-0">
+                  <LiquidEther
+                    colors={['#5227FF', '#FF9FFC', '#B19EEF']}
+                    mouseForce={20}
+                    cursorSize={100}
+                    isViscous
+                    viscous={30}
+                    iterationsViscous={32}
+                    iterationsPoisson={32}
+                    resolution={0.5}
+                    isBounce={false}
+                    autoDemo
+                    autoSpeed={0.5}
+                    autoIntensity={2.2}
+                    takeoverDuration={0.25}
+                    autoResumeDelay={3000}
+                    autoRampDuration={0.6}
+                  />
+                  <div className="absolute inset-0 bg-indigo-900/30 mix-blend-multiply pointer-events-none"></div>
+                </div>
+
+                <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 z-0"></div>
+                <div className="relative z-10 grid lg:grid-cols-5 gap-8 items-center w-full">
                   <div className="lg:col-span-3">
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-sm font-bold tracking-wide mb-4 backdrop-blur-sm border border-white/30">
                       <SparklesIcon className="h-4 w-4 text-yellow-300" /> New Premium Feature

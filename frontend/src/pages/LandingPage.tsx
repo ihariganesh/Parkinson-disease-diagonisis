@@ -150,9 +150,9 @@ export default function LandingPage() {
             <div style={{ width: '100%', height: '400px', position: 'absolute', inset: 0, zIndex: -1 }}>
               <Antigravity
                 count={300}
-                magnetRadius={22}
-                ringRadius={14}
-                waveSpeed={0.4}
+                magnetRadius={26}
+                ringRadius={18}
+                waveSpeed={0.8}
                 waveAmplitude={1}
                 particleSize={1.7}
                 lerpSpeed={0.05}

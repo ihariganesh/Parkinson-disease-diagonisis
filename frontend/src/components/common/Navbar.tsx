@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import GradientText from "./GradientText";
+import GooeyNav from "./ReactBits/GooeyNav";
 
 import { ChatBubbleLeftRightIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 
@@ -27,7 +28,6 @@ const navigation = {
     { name: "Progression", href: "/longitudinal", icon: ArrowTrendingUpIcon },
     { name: "Reports", href: "/reports", icon: ChartBarIcon },
     { name: "Recommendations", href: "/recommendations", icon: SparklesIcon },
-    { name: "Profile", href: "/profile", icon: UserCircleIcon },
   ],
   doctor: [
     { name: "Dashboard", href: "/doctor/dashboard", icon: HomeIcon },
@@ -62,6 +62,12 @@ export default function Navbar() {
   if (!state.user && !isDemoPage) return null;
 
   const userNavigation = state.user ? navigation[state.user.role as keyof typeof navigation] || [] : [];
+
+  const gooeyItems = userNavigation.map(item => ({
+    label: item.name,
+    href: item.href,
+    icon: item.icon
+  }));
 
   // Demo page navbar (simplified)
   if (isDemoPage && !state.user) {
@@ -114,7 +120,7 @@ export default function Navbar() {
     <nav className="bg-white shadow-lg border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <div className="flex flex-1 items-center overflow-hidden">
+          <div className="flex flex-1 items-center">
             <div className="flex-shrink-0 flex items-center pr-2 lg:pr-6">
               <Link
                 to={`/${state.user.role}`}
@@ -131,27 +137,23 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Scrollable container for links on medium/large screens */}
-            <div className="hidden lg:flex lg:items-center lg:space-x-1 xl:space-x-3 overflow-x-auto no-scrollbar py-1">
-              {userNavigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="inline-flex items-center px-2 py-1.5 rounded-lg text-sm font-semibold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition duration-200 whitespace-nowrap shrink-0"
-                >
-                  <item.icon className="h-[18px] w-[18px] mr-1.5 shrink-0" />
-                  {item.name}
-                </Link>
-              ))}
+            {/* Container for links on medium/large screens */}
+            <div className="hidden lg:flex lg:items-center py-1 w-full relative z-[5]">
+              <GooeyNav
+                items={gooeyItems}
+              />
             </div>
           </div>
 
           <div className="hidden lg:ml-6 lg:flex lg:items-center shrink-0 pl-4 lg:border-l lg:border-slate-200 ml-auto">
             <div className="relative">
               <div className="flex items-center space-x-3">
-                <span className="text-sm font-bold text-slate-700 whitespace-nowrap truncate max-w-[150px]">
+                <Link
+                  to="/profile"
+                  className="text-sm font-bold text-slate-700 hover:text-indigo-600 transition-colors whitespace-nowrap truncate max-w-[150px] cursor-pointer"
+                >
                   {state.user.first_name} {state.user.last_name}
-                </span>
+                </Link>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm bg-indigo-100 text-indigo-700 capitalize shrink-0">
                   {state.user.role}
                 </span>
