@@ -17,7 +17,7 @@ A comprehensive AI-powered clinical decision support system for Parkinson's dise
 
 ### Multi-Modal Analysis
 - **🧠 DaT Scan Analysis** (50% weight) - Deep learning analysis of dopamine transporter scans
-- **✍️ Handwriting Analysis** (25% weight) - CNN-based detection of motor control abnormalities
+- **✍️ Handwriting Analysis** (25% weight) - ResNet50 Transfer Learning for detection of motor control abnormalities in spiral/wave drawings
 - **🎤 Voice Analysis** (25% weight) - MFCC-based speech pattern recognition
 
 ### Key Capabilities
@@ -49,7 +49,7 @@ A comprehensive AI-powered clinical decision support system for Parkinson's dise
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │  Multi-Modal Fusion Service                           │ │
 │  │  • DaT CNN+LSTM Model (50% weight)                    │ │
-│  │  • Handwriting CNN Model (25% weight)                 │ │
+│  │  • Handwriting ResNet50 Transfer Learning Model (25% weight) │ │
 │  │  • Voice MFCC+ML Model (25% weight)                   │ │
 │  │  • Weighted Ensemble → Final Diagnosis                │ │
 │  └────────────────────────────────────────────────────────┘ │
@@ -230,9 +230,19 @@ python train_dat_model.py
 
 ### 2. Train Handwriting Model
 
+The handwriting model uses **ResNet50 Transfer Learning** as the primary ML algorithm. ResNet50 is a 50-layer deep convolutional neural network pre-trained on ImageNet, fine-tuned here for binary classification (Parkinson's vs. Healthy) on spiral and wave drawing images.
+
+**Algorithm Details:**
+- **Primary Model**: ResNet50 (Transfer Learning from ImageNet weights)
+- **Alternative Model**: EfficientNetB0 (also supported)
+- **Classification Head**: GlobalAveragePooling2D → Dense(128, ReLU) → Dense(64, ReLU) → Dense(1, Sigmoid)
+- **Training Strategy**: Two-phase — freeze base layers first, then fine-tune top 20 layers
+- **Features**: HOG (Histogram of Oriented Gradients) + SVM also supported as a lightweight alternative via `ml_models/handwriting_analyzer.py`
+
 ```bash
-# Train handwriting analysis model
-python train_handwriting_model.py
+# Train handwriting analysis model (ResNet50 transfer learning)
+cd backend
+python transfer_learning_trainer.py
 ```
 
 ### 3. Train Voice Model
